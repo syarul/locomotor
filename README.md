@@ -14,15 +14,15 @@ A smooth and FPS friendly animation library
 
 # usage
 ```javascript
-const locomotor = require('locomotor')
-new locomotor(node, prop, options)
+import Locomotor from 'locomotor'
+new Locomotor(node, prop, options)
 ```
 - **node**: *(string)* ***required*** DOM node id reference
 - **prop**: *(object)* ***required*** the animation property
 - **options**: *(object)* ***optional*** the animation options
 
 ```javascript
-const Locomotor = require('locomotor')
+import Locomotor from 'locomotor'
 
 const lm = new Locomotor('myNode', {
   tranform: step => `translate(${step}px, 0)`
