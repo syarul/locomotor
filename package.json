@@ -1,0 +1,24 @@
+{
+  "name": "locomotor",
+  "version": "0.0.2",
+  "description": "A smooth and FPS friendly animation library",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/syarul/locomotor.git"
+  },
+  "keywords": [
+    "animation",
+    "requestAnimationFrame",
+    "fps"
+  ],
+  "author": "Shahrul Nizam Selamat",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/syarul/locomotor/issues"
+  },
+  "homepage": "https://github.com/syarul/locomotor#readme"
+}
