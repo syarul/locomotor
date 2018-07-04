@@ -1,6 +1,6 @@
 'use strict'
 /**
- * locomotor v0.0.1 Alpha release: https://github.com/syarul/locomotor
+ * locomotor v0.0.3 Alpha release: https://github.com/syarul/locomotor
  * A smooth and FPS friendly animation library
  *
  * <<<<<<<<<<<<<<<<<<<<<<<<<<<<<< locomotor >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

@@ -1,4 +1,4 @@
-# locomotor
+# locomotor v0.0.3
 A smooth and FPS friendly animation library
 
 > install with npm
@@ -30,4 +30,7 @@ const lm = new Locomotor('myNode', {
   data: [ -1090, 255 ]
 })
 ```
+
+# sample
+checkout the sample with [parcel](https://github.com/parcel-bundler/parcel) by running ```parcel examples/index.html```
 
