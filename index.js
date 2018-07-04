@@ -1,6 +1,6 @@
 'use strict'
 /**
- * locomotor v0.0.3 Alpha release: https://github.com/syarul/locomotor
+ * locomotor v0.0.4 Alpha release: https://github.com/syarul/locomotor
  * A smooth and FPS friendly animation library
  *
  * <<<<<<<<<<<<<<<<<<<<<<<<<<<<<< locomotor >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -28,6 +28,7 @@ function locomotor (id, anim, opts) {
   this.fps = opts.fps || 60
   this.fpsInterval = opts.fpsInterval || 1000
   this.stop = opts.stop || false
+  this.advanceSetup = opts.advanceSetup || null
 
   var startTime
   var then
@@ -46,12 +47,9 @@ function locomotor (id, anim, opts) {
   }
 
   var hasDebugNode = document.getElementById(opts.debugNode)
-
   var rAF = window.requestAnimationFrame
   var perf = window.performance
-
   var self = this
-
   this.startAnimating = function (fps) {
     self.fpsInterval = 1000 / fps
     then = perf.now()
@@ -60,19 +58,14 @@ function locomotor (id, anim, opts) {
   }
 
   this.animate = function (now) {
-
     if (sinceStart > duration) {
       return
     }
-
     if (self.stop) {
       return
     }
-
     rAF(self.animate)
-
     elapsed = now - then
-
     then = now - (elapsed % self.fpsInterval)
 
     // debug fps
@@ -85,34 +78,26 @@ function locomotor (id, anim, opts) {
         console.log('Node: ' + id + ' | Elapsed time: ' + Math.round(sinceStart / 1000 * 100) / 100 + ' secs @ ' + currentFps + ' fps.')
       }
     }
-
-    self.animSet(node, interval, data, animationProperty, functionStr, now)
+    if(self.advanceSetup && typeof self.advanceSetup === 'function') {
+      self.advanceSetup.call(self, node, now)
+    } else {
+      self.animSet(node, interval, data, animationProperty, functionStr, now)
+    }
   }
 
   this.animSet = function (node, interval, data, animationProperty, functionStr, now) {
     if (typeof functionStr !== 'function') {
       throw new Error('No parameter given to the animation value')
     }
-
     var range = data[1] - data[0]
-
-    // get radial degree base on performance.now()
-    var theta = (now % range) / range * 2 * Math.PI
-
-    // instead linear value we assign accurate value on the given interval
-    interval *= (1 + Math.cos(theta) / range)
-
     if (animStep > data[1]) {
       animStep = data[0]
     }
-
     if (node) {
       node.style[animationProperty] = functionStr.call(self, animStep)
     }
-
     animStep = animStep + interval
   }
-
   this.startAnimating(this.fps)
 }
 

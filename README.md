@@ -1,4 +1,4 @@
-# locomotor v0.0.3
+# locomotor v0.0.4
 A smooth and FPS friendly animation library
 
 > install with npm
