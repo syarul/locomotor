@@ -17,14 +17,17 @@ for (let i = 0; i < listLength; i++) {
 
   new Locomotor(`square${i}`, {}, {
     debug: i === 0,
+    easing: 'easeInOutQuint',
     debugNode: 'message',
-    advanceSetup: node => {
+    advanceSetup: (node, timeStamp, easing) => {
       if (step[i] > width) {
         step[i] = 0
       }
 
+      var inc = width * easing.get(step[i] / width)
+
       if (node) {
-        node.style.transform = `translate(${step[i]}px, 0) rotate(${step[i] / 100}rad)`
+        node.style.transform = `translate(${inc}px, 0) rotate(${inc / 100}rad)`
       }
 
       step[i] = step[i] + interval

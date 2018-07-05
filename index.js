@@ -1,6 +1,6 @@
 'use strict'
 /**
- * locomotor v0.0.4 Alpha release: https://github.com/syarul/locomotor
+ * locomotor v0.0.5 Alpha release: https://github.com/syarul/locomotor
  * A smooth and FPS friendly animation library
  *
  * <<<<<<<<<<<<<<<<<<<<<<<<<<<<<< locomotor >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -9,8 +9,9 @@
  * Released under the MIT License.
  */
 
-function locomotor (id, anim, opts) {
+ var easing = require('./easing')
 
+function locomotor (id, anim, opts) {
   anim = anim || {}
 
   var animationProperty
@@ -29,6 +30,7 @@ function locomotor (id, anim, opts) {
   this.fpsInterval = opts.fpsInterval || 1000
   this.stop = opts.stop || false
   this.advanceSetup = opts.advanceSetup || null
+  this.easing = opts.easing || null
 
   var startTime
   var then
@@ -39,11 +41,19 @@ function locomotor (id, anim, opts) {
   var interval = opts.interval || 1 // default value
   var data = opts.data || [0, 100] // default custom value
   var duration = opts.duration || Infinity
+  var ease
+  var easingStep
+  var step
+  var range
 
   var node = document.getElementById(id)
 
   if (!node) {
     throw new Error('unable to find a DOM node with id: ' + id)
+  }
+
+  if(this.easing) {
+    ease = easing(this.easing)
   }
 
   var hasDebugNode = document.getElementById(opts.debugNode)
@@ -78,8 +88,8 @@ function locomotor (id, anim, opts) {
         console.log('Node: ' + id + ' | Elapsed time: ' + Math.round(sinceStart / 1000 * 100) / 100 + ' secs @ ' + currentFps + ' fps.')
       }
     }
-    if(self.advanceSetup && typeof self.advanceSetup === 'function') {
-      self.advanceSetup.call(self, node, now)
+    if (self.advanceSetup && typeof self.advanceSetup === 'function') {
+      self.advanceSetup.call(self, node, now, ease)
     } else {
       self.animSet(node, interval, data, animationProperty, functionStr, now)
     }
@@ -89,12 +99,19 @@ function locomotor (id, anim, opts) {
     if (typeof functionStr !== 'function') {
       throw new Error('No parameter given to the animation value')
     }
-    var range = data[1] - data[0]
+    // get the range of movement
+    range = (data[1] - data[0])
+
     if (animStep > data[1]) {
       animStep = data[0]
     }
+    
+    if(self.easing){
+      easingStep = ease.get(animStep / range)
+      step = range * easingStep
+    }
     if (node) {
-      node.style[animationProperty] = functionStr.call(self, animStep)
+      node.style[animationProperty] = functionStr.call(self, self.easing ? step : animStep)
     }
     animStep = animStep + interval
   }

@@ -7,6 +7,7 @@ new Locomotor('square', {
 }, {
   interval: 5,
   data: [ 0, width ],
+  easing: 'easeOutCubic',
   debug: true,
   debugNode: 'message'
 })
