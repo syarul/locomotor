@@ -23,13 +23,10 @@ for (let i = 0; i < listLength; i++) {
       if (step[i] > width) {
         step[i] = 0
       }
-
       var inc = width * easing.get(step[i] / width)
-
       if (node) {
         node.style.transform = `translate(${inc}px, 0) rotate(${inc / 100}rad)`
       }
-
       step[i] = step[i] + interval
     }
   })

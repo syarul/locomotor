@@ -9,7 +9,7 @@
  * Released under the MIT License.
  */
 
- var easing = require('./easing')
+var easing = require('./easing')
 
 function locomotor (id, anim, opts) {
   anim = anim || {}
@@ -52,7 +52,7 @@ function locomotor (id, anim, opts) {
     throw new Error('unable to find a DOM node with id: ' + id)
   }
 
-  if(this.easing) {
+  if (this.easing) {
     ease = easing(this.easing)
   }
 
@@ -89,7 +89,7 @@ function locomotor (id, anim, opts) {
       }
     }
     if (self.advanceSetup && typeof self.advanceSetup === 'function') {
-      self.advanceSetup.call(self, node, now, ease)
+      self.advanceSetup(node, now, ease)
     } else {
       self.animSet(node, interval, data, animationProperty, functionStr, now)
     }
@@ -105,8 +105,8 @@ function locomotor (id, anim, opts) {
     if (animStep > data[1]) {
       animStep = data[0]
     }
-    
-    if(self.easing){
+
+    if (self.easing) {
       easingStep = ease.get(animStep / range)
       step = range * easingStep
     }
