@@ -1,4 +1,4 @@
-# locomotor v0.0.5
+# locomotor v0.0.6
 
 [![npm package](https://img.shields.io/badge/npm-0.0.5-blue.svg)](https://www.npmjs.com/package/locomotor) [![browser build](https://img.shields.io/badge/rawgit-0.0.5-ff69b4.svg)](https://cdn.rawgit.com/syarul/locomotor/master/locomotor-min.js)
 
@@ -12,7 +12,7 @@ A smooth and FPS friendly animation library
 - render according to the browser fps
 - animation is adjusted base on the fps for smoother transition and less jerky at times
 - animate css property
-- simpe data with min and max value
+- simple data with min and max value
 - less configuration
 - has multitude easing options
 - has advance setup where you can write your own custom animation
@@ -34,6 +34,8 @@ const lm = new Locomotor('myNode', {
 }, {
   data: [ -1090, 255 ]
 })
+
+lm.run()
 ```
 
 # Options Parameters
@@ -46,7 +48,7 @@ const lm = new Locomotor('myNode', {
 | **interval**  | the interval of the animation, higher mean faster animation, default is 1 |
 | **data**  | the animation min and max value in array format [ min, max ] |
 | **easing**  | a string value see [easing list](#easing-features) or an array of custom easing in [mX1, mY1, mX2, mY2] |
-| **advanceSetup**  | custom animation function, checkout samples directory for usage case |
+| **advanceSetup**  | custom animation function, checkout [this sample](https://github.com/syarul/locomotor/blob/master/examples/sample-transform-2.js) for usage case |
 
 # Easing Features
 
@@ -80,6 +82,7 @@ const lm = new Locomotor('myNode', {
   - easeOutBack : [0.175, 0.885, 0.320, 1.275]
   - easeInOutBack : [0.680, -0.550, 0.265, 1.550]
 
-# Samples
+# Examples
+[dir](https://github.com/syarul/locomotor/tree/master/examples)
 checkout the sample with [parcel](https://github.com/parcel-bundler/parcel) by running ```parcel examples/index.html```
 

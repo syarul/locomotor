@@ -2,7 +2,7 @@ import Locomotor from '../'
 
 const width = document.body.offsetWidth - 100
 
-new Locomotor('square', {
+const anim = new Locomotor('square', {
   transform: step => `translate(${step}px, 0) rotate(${step / 100}rad)`
 }, {
   interval: 5,
@@ -11,6 +11,8 @@ new Locomotor('square', {
   debug: true,
   debugNode: 'message'
 })
+
+anim.run()
 
 setTimeout(() => {
   // lm.stop = true

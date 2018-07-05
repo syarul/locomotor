@@ -15,7 +15,7 @@ for (let i = 0; i < listLength; i++) {
 
   step.push(0)
 
-  new Locomotor(`square${i}`, {}, {
+  let anim = new Locomotor(`square${i}`, {}, {
     debug: i === 0,
     easing: 'easeInOutQuint',
     debugNode: 'message',
@@ -30,4 +30,8 @@ for (let i = 0; i < listLength; i++) {
       step[i] = step[i] + interval
     }
   })
+
+  anim.run()
+
+  setTimeout(() => anim.stop(), 15000)
 }
