@@ -36,6 +36,9 @@ const lm = new Locomotor('myNode', {
 })
 
 lm.run()
+
+// to stop 
+// lm.stop()
 ```
 
 # Options Parameters
@@ -43,7 +46,6 @@ lm.run()
 | ------------- |:-------------:|
 | **fps**  | the frame per seconds for the animation, default is 60 |
 | **fpsInterval**  | the fps interval for the animation, default is 1000 |
-| **stop**  | stop the animation, default is false which always (loop) |
 | **duration**  | use this to stop the animation after the duration finish |
 | **interval**  | the interval of the animation, higher mean faster animation, default is 1 |
 | **data**  | the animation min and max value in array format [ min, max ] |
