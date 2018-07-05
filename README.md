@@ -85,5 +85,5 @@ lm.run()
   - easeInOutBack : [0.680, -0.550, 0.265, 1.550]
 
 # Examples
-checkout the [sample](https://github.com/syarul/locomotor/tree/master/examples) with [parcel](https://github.com/parcel-bundler/parcel) by running ```parcel examples/index.html```
+ View with [parcel](https://github.com/parcel-bundler/parcel) by running ```parcel examples/index.html```
 
