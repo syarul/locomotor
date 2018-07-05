@@ -1,6 +1,6 @@
-# locomotor v0.0.6
+# locomotor v0.0.7
 
-[![npm package](https://img.shields.io/badge/npm-0.0.5-blue.svg)](https://www.npmjs.com/package/locomotor) [![browser build](https://img.shields.io/badge/rawgit-0.0.5-ff69b4.svg)](https://cdn.rawgit.com/syarul/locomotor/master/locomotor-min.js)
+[![npm package](https://img.shields.io/badge/npm-0.0.7-blue.svg)](https://www.npmjs.com/package/locomotor) [![browser build](https://img.shields.io/badge/rawgit-0.0.7-ff69b4.svg)](https://cdn.rawgit.com/syarul/locomotor/master/locomotor-min.js)
 
 A smooth and FPS friendly animation library
 
