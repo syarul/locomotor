@@ -42,17 +42,17 @@ lm.run()
 ```
 
 # Options Parameters
-| options       | info          |
-| ------------- |:-------------:|
-| **fps**  | the frame per seconds for the animation, default is 60 |
-| **fpsInterval**  | the fps interval for the animation, default is 1000 |
-| **duration**  | use this to stop the animation after the duration finish |
-| **interval**  | the interval of the animation, higher mean faster animation, default is 1 |
-| **data**  | the animation min and max value in array format [ min, max ] |
-| **easing**  | a string value see [easing list](#easing-features) or an array of custom easing in [mX1, mY1, mX2, mY2] |
-| **advanceSetup**  | custom animation function, checkout [this sample](https://github.com/syarul/locomotor/blob/master/examples/sample-transform-2.js) for usage case |
-| **debug**  | boolean value, debugging info which print fps to console |
-| **debugNode**  | instead of console, print debugging info to a DOM node |
+| options       | type          | info          |
+| ------------- |:------:|:-------------:|
+| **fps** | int | the frame per seconds for the animation, default is 60 |
+| **fpsInterval** | int | the fps interval for the animation, default is 1000 |
+| **duration** | int | use this to stop the animation after the duration finish |
+| **interval** | int | the interval of the animation, higher mean faster animation, default is 1 |
+| **data** | array | the animation min and max value i.e [ min, max ] |
+| **easing** | string/array | see [easing list](#easing-features) or provide an array of custom easing in [mX1, mY1, mX2, mY2] |
+| **advanceSetup** | function | custom animation, checkout [this sample](https://github.com/syarul/locomotor/blob/master/examples/sample-transform-2.js) for usage case |
+| **debug** | boolean | debugging info which print fps to console |
+| **debugNode** | string | instead of console, print debugging info to a DOM node |
 
 # Easing Features
 
