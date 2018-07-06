@@ -52,7 +52,7 @@ lm.run()
 | **easing**  | a string value see [easing list](#easing-features) or an array of custom easing in [mX1, mY1, mX2, mY2] |
 | **advanceSetup**  | custom animation function, checkout [this sample](https://github.com/syarul/locomotor/blob/master/examples/sample-transform-2.js) for usage case |
 | **debug**  | boolean value, debugging info which print fps to console |
-| **debugNode**  | instead of console, print debuggging info to a DOM node |
+| **debugNode**  | instead of console, print debugging info to a DOM node |
 
 # Easing Features
 
