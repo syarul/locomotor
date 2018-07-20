@@ -1,6 +1,6 @@
 'use strict'
 /**
- * locomotor v0.0.8 Alpha release: https://github.com/syarul/locomotor
+ * locomotor v0.0.9 Alpha release: https://github.com/syarul/locomotor
  * A smooth and FPS friendly animation library
  *
  * <<<<<<<<<<<<<<<<<<<<<<<<<<<<<< locomotor >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -17,17 +17,20 @@ function locomotor (id, anim, opts) {
   var animationProperty
   var functionStr
 
-  for (var attr in anim) {
-    animationProperty = attr
-    if (typeof anim[attr] === 'function') {
-      functionStr = anim[attr]
+  var protoAnim = Object.getPrototypeOf(anim)
+
+  if(protoAnim.hasOwnProperty('constructor') && protoAnim.constructor === Object){
+    for (var attr in anim) {
+      animationProperty = attr
+      if (typeof anim[attr] === 'function') {
+        functionStr = anim[attr]
+      }
     }
   }
 
   opts = opts || {}
 
   this.fps = opts.fps || 60
-  this.fpsInterval = opts.fpsInterval || 1000
   this.advanceSetup = opts.advanceSetup || null
   this.easing = opts.easing || null
 
@@ -45,6 +48,7 @@ function locomotor (id, anim, opts) {
   var easingStep
   var step
   var range
+  var fpsInterval
 
   var node = document.getElementById(id)
 
@@ -61,7 +65,7 @@ function locomotor (id, anim, opts) {
   var perf = window.performance
   var self = this
   this.startAnimating = function (fps) {
-    self.fpsInterval = 1000 / fps
+    fpsInterval = 1000 / fps
     then = perf.now()
     startTime = then
     self.animate(then)

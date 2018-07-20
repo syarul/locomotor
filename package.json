@@ -1,6 +1,6 @@
 {
   "name": "locomotor",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "A smooth and FPS friendly animation library",
   "main": "index.js",
   "scripts": {

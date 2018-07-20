@@ -1,6 +1,6 @@
-# locomotor v0.0.8
+# locomotor v0.0.9
 
-[![npm package](https://img.shields.io/badge/npm-0.0.8-blue.svg)](https://www.npmjs.com/package/locomotor) [![browser build](https://img.shields.io/badge/rawgit-0.0.8-ff69b4.svg)](https://cdn.rawgit.com/syarul/locomotor/master/locomotor-min.js)
+[![npm package](https://img.shields.io/badge/npm-0.0.9-blue.svg)](https://www.npmjs.com/package/locomotor) [![browser build](https://img.shields.io/badge/rawgit-0.0.9-ff69b4.svg)](https://cdn.rawgit.com/syarul/locomotor/master/locomotor-min.js)
 
 A smooth and FPS friendly animation library
 
@@ -45,7 +45,6 @@ lm.run()
 | options       | type          | info          |
 | ------------- |:------:|:-------------:|
 | **fps** | int | the frame per seconds for the animation, default is 60 |
-| **fpsInterval** | int | the fps interval for the animation, default is 1000 |
 | **duration** | int | use this to stop the animation after the duration finish |
 | **interval** | int | the interval of the animation, higher mean faster animation, default is 1 |
 | **data** | array | the animation min and max value i.e [ min, max ] |
