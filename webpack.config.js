@@ -8,7 +8,6 @@ const config = {
     fs: 'empty'
   },
   entry: [
-    'babel-polyfill',
     './examples/index.js',
     './view/layout.pug'
   ],

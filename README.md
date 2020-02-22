@@ -1,6 +1,6 @@
-# locomotor v0.1.0
+# locomotor v0.1.1
 
-[![npm package](https://img.shields.io/badge/npm-0.1.0-blue.svg)](https://www.npmjs.com/package/locomotor) [![browser build](https://img.shields.io/badge/rawgit-0.1.0-ff69b4.svg)](https://cdn.rawgit.com/syarul/locomotor/master/locomotor-min.js)
+[![npm package](https://img.shields.io/badge/npm-0.1.1-blue.svg)](https://www.npmjs.com/package/locomotor) [![browser build](https://img.shields.io/badge/rawgit-0.1.1-ff69b4.svg)](https://cdn.rawgit.com/syarul/locomotor/master/locomotor-min.js)
 
 A react hook without lingo
 
@@ -9,6 +9,14 @@ A react hook without lingo
 Install with npm
 
 ```npm i locomotor```
+
+### Quick Getting Start
+
+clone repo [https://github.com/syarul/getting-start-locomotor](https://github.com/syarul/getting-start-locomotor)
+
+check into the clone directory
+
+```npm install && npm start```
 
 ### What's this
 Basically a strip version of react while using function hooks through
@@ -31,7 +39,7 @@ Using caleb's [babel-plugin-transform-jsx](https://github.com/calebmer/node_modu
 
 ### Usage
 ```jsx
-import locomotor, { useState, useEffect } from 'locomotor'
+import { locoDOM, useState, useEffect } from 'locomotor'
 
 function App(props){
 
@@ -48,7 +56,9 @@ function App(props){
   }, [state])
 
   return (
-    <button onClick={click}>{label} {state}</button>
+    <button onClick={click}>
+      {label} {state}
+    </button>
   )
 }
 
@@ -56,7 +66,7 @@ const props = {
   label: 'click me!'
 }
 
-locomotor.render(
+locoDOM.render(
   <App {...props} />, 
   document.body
 )
