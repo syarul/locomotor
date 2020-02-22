@@ -1,25 +1,73 @@
 {
   "name": "locomotor",
-  "version": "0.0.9",
-  "description": "A smooth and FPS friendly animation library",
+  "version": "0.1.0",
+  "description": "A react hook without lingo",
   "main": "index.js",
   "scripts": {
-    "bundle": "browserify index.js --standalone Locomotor | uglifyjs --compress --mangle > locomotor-min.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "webpack-dev-server -d",
+    "build": "npm run bundle",
+    "bundle": "rollup -c rollup.config.js",
+    "postbuild": "uglifyjs locomotor-min.js --pure-funcs classCallCheck -c unsafe,collapse_vars,evaluate,loops,keep_fargs=false,pure_getters,unused,dead_code -m -o locomotor-min.js --in-source-map locomotor-min.js.map --source-map filename=locomotor-min.js.map",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "standard locomotor.js src/**/*.js examples/**/*.js test//**/*.js --fix"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/syarul/locomotor.git"
   },
   "keywords": [
-    "animation",
-    "requestAnimationFrame",
-    "fps"
+    "react",
+    "jsx",
+    "hooks",
+    "view"
   ],
   "author": "Shahrul Nizam Selamat",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/syarul/locomotor/issues"
   },
-  "homepage": "https://github.com/syarul/locomotor#readme"
+  "homepage": "https://github.com/syarul/locomotor#readme",
+  "dependencies": {
+    "hookuspocus": "git+https://github.com/michael-klein/hookuspocus.git"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.8.4",
+    "@babel/preset-env": "^7.8.4",
+    "@rollup/plugin-node-resolve": "^7.1.1",
+    "babel-eslint": "^10.0.3",
+    "babel-loader": "^8.0.6",
+    "babel-plugin-external-helpers": "^6.22.0",
+    "babel-plugin-transform-jsx": "^2.0.0",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-polyfill": "^6.26.0",
+    "html-loader": "^0.5.5",
+    "html-webpack-plugin": "^3.2.0",
+    "pug": "^2.0.4",
+    "pug-html-loader": "^1.1.5",
+    "rollup": "^1.31.1",
+    "rollup-plugin-babel": "^4.3.3",
+    "standard": "^14.3.1",
+    "uglify-es": "^3.3.9",
+    "webpack": "^4.41.6",
+    "webpack-cli": "^3.3.11",
+    "webpack-dev-server": "^3.10.3"
+  },
+  "babel": {
+    "presets": [
+      "@babel/preset-env"
+    ],
+    "plugins": [
+      "transform-object-rest-spread",
+      [
+        "babel-plugin-transform-jsx",
+        {
+          "useVariables": true,
+          "module": "locomotor"
+        }
+      ]
+    ]
+  },
+  "standard": {
+    "parser": "babel-eslint"
+  }
 }
