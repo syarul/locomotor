@@ -4,18 +4,18 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<title>locomotor</title>
+		<script src="./locomotor-min.js"></script>
 	</head>
 	<body>
 		<div id="app"></div>
 		<script>
-			// console.log(locomotor)
-			// const Locomotor = locomotor.default
-			// const locoDOM = locomotor.locoDOM
-			// locoDOM.render(
-			// 	<div>hello</div>,
-			// document.getElementById('app'))
-
+			const locoDOM = locomotor.locoDOM
+			locoDOM.render({
+			        elementName: 'div',
+			        attributes: {},
+			        children: ['hello locomotor!']
+			    },
+			    document.getElementById('app'))
 		</script>
-		<script src="./index.js"></script>
 	</body>
 </html>

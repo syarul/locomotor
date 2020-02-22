@@ -1,6 +1,6 @@
-# locomotor v0.1.1
+# locomotor v0.1.2
 
-[![npm package](https://img.shields.io/badge/npm-0.1.1-blue.svg)](https://www.npmjs.com/package/locomotor) [![browser build](https://img.shields.io/badge/rawgit-0.1.1-ff69b4.svg)](https://cdn.rawgit.com/syarul/locomotor/master/locomotor-min.js)
+[![npm package](https://img.shields.io/badge/npm-0.1.2-blue.svg)](https://www.npmjs.com/package/locomotor) [![browser build](https://img.shields.io/badge/rawgit-0.1.2-ff69b4.svg)](https://cdn.rawgit.com/syarul/locomotor/master/locomotor-min.js)
 
 A react hook without lingo
 

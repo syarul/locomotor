@@ -1,6 +1,6 @@
 import { useState, useEffect } from '../'
 
-function App(props) {
+function App (props) {
   const { todo } = props
 
   const [timer, setTimer] = useState(false)
@@ -8,11 +8,9 @@ function App(props) {
   const [time, setTime] = useState(new Date().toLocaleTimeString())
 
   useEffect(() => {
+    console.log(`timer ${todo} ${timer ? 'on' : 'off'}!`)
 
-    console.log(`timer toggled ${timer?'on':'off'}!`)
-
-    if(timer) {
-
+    if (timer) {
       const intv = setInterval(() => {
         setTime(new Date().toLocaleTimeString())
       }, 1000)
@@ -21,7 +19,6 @@ function App(props) {
         clearInterval(intv)
       }
     }
-
   }, [timer])
 
   const toggle = () => {
@@ -30,7 +27,7 @@ function App(props) {
 
   return (
     <div>
-      <button onClick={toggle}> toggle {timer?'on':'off'} </button>
+      <button onClick={toggle}> toggle {timer ? 'on' : 'off'} </button>
       <p>current time {time}</p>
     </div>
   )

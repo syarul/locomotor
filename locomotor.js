@@ -1,8 +1,7 @@
 import walk from './src/walk'
 
-const locomotor = function(virtualNode) {
-
-	/**
+const locomotor = function (virtualNode) {
+  /**
      * Pick up the virtual node by caleb transform-jsx
      * https://github.com/calebmer/node_modules/tree/master/babel-plugin-transform-jsx
      * Stript version of jsx transform, cavets:-
@@ -20,8 +19,7 @@ const locomotor = function(virtualNode) {
      * walk vtree to generate virtual nodes tree
      */
 
-    return walk(virtualNode)
-
+  return walk(virtualNode)
 }
 
 export default locomotor

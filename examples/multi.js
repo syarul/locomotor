@@ -1,6 +1,6 @@
 import { useState } from '../'
 
-function Child(props){ 
+function Child (props) {
   const { foobar } = props
 
   const [count, setCount] = useState(1)
@@ -17,8 +17,7 @@ function Child(props){
   )
 }
 
-function App(props) {
-
+function App (props) {
   const { todo } = props
 
   const [foobar, setFoobar] = useState(5)
@@ -33,7 +32,7 @@ function App(props) {
         {todo}: {foobar}
       </button>
       <p>sub hook</p>
-      <Child foobar={foobar}/>
+      <Child foobar={foobar} />
     </div>
   )
 }

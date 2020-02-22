@@ -2,7 +2,7 @@ import { useState } from '../'
 
 let i = 0
 
-function App(props) {
+function App (props) {
   const { todo } = props
   const [foobar, setFoobar] = useState('foo')
   i++

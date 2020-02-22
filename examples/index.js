@@ -2,7 +2,7 @@ import App from './effect'
 
 import { locoDOM } from '../'
 
-let props = { todo: 'called' }
+const props = { todo: 'called' }
 
 locoDOM.render(
   <App {...props} />,

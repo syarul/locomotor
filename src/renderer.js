@@ -1,4 +1,3 @@
-import walk from './walk'
 import patch from './patch'
 
 function camelCase (s, o) {
@@ -7,7 +6,7 @@ function camelCase (s, o) {
 
 function styleToStr (obj) {
   let style = ''
-  for (let attr in obj) {
+  for (const attr in obj) {
     style += camelCase(attr, obj)
   }
   return style
@@ -65,21 +64,22 @@ function createEl (vtree, fragment) {
   return fragment
 }
 
-function handler(vtree, mount, transform, handle) {
-  vtree instanceof Promise ?
-    vtree.then(v => handle(mount, transform(v))) :
-      handle(mount, transform(vtree))
+function handler (vtree, mount, transform, handle) {
+  vtree instanceof Promise
+    ? vtree.then(v => handle(mount, transform(v)))
+    : handle(mount, transform(vtree))
   return mount
 }
 
 class Renderer {
   render (...args) {
     this.rootNode = handler(
-      ...args, 
-      createEl, 
+      ...args,
+      createEl,
       (rootNode, vnode) => rootNode.appendChild(vnode)
     )
   }
+
   on (vtree) {
     handler(vtree, this.rootNode, createEl, patch)
   }

@@ -1,7 +1,6 @@
 import { vtreeRender } from './renderer'
 import { pocus, dataMap } from 'hookuspocus/src/core'
 import { on, onStateChanged } from 'hookuspocus/src/on'
-import { useLayoutEffect } from 'hookuspocus/src/use_layout_effect'
 import { useEffect } from 'hookuspocus/src/use_effect'
 
 // prop store
@@ -33,7 +32,7 @@ const onEffect = cb =>
   on(useEffect, (data, effect) => {
     const [context] = dataMap.get(data.context)
     effect().then(clean => {
-      if(clean && typeof clean === 'function') {
+      if (clean && typeof clean === 'function') {
         cb(clean, context)
       }
     })
@@ -49,7 +48,7 @@ onEffect((effect, context) => {
 // so our function can use all hooks features
 // from hookuspocus https://github.com/michael-klein/hookuspocus
 function createContext ({ elementName, attributes }) {
-  if (!rootVtree.length) {rootVtree.push(elementName)}
+  if (!rootVtree.length) { rootVtree.push(elementName) }
   // map the attributes/props where we will
   // be able to retrive on subsequent runs
   propMap.set(elementName, attributes)

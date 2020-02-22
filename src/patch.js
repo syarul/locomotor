@@ -21,21 +21,21 @@ function arbiter (oldNode, newNode) {
 }
 
 function setAttr (oldNode, newNode) {
-  let oAttr = newNode.attributes
-  let output = {}
+  const oAttr = newNode.attributes
+  const output = {}
   let i = 0
   while (i < oAttr.length) {
     output[oAttr[i].name] = oAttr[i].value
     i++
   }
-  let iAttr = oldNode.attributes
-  let input = {}
+  const iAttr = oldNode.attributes
+  const input = {}
   let j = 0
   while (j < iAttr.length) {
     input[iAttr[j].name] = iAttr[j].value
     j++
   }
-  for (let attr in output) {
+  for (const attr in output) {
     if (oldNode.attributes[attr] && oldNode.attributes[attr].name === attr && oldNode.attributes[attr].value !== output[attr]) {
       oldNode.setAttribute(attr, output[attr])
     } else {
@@ -45,7 +45,7 @@ function setAttr (oldNode, newNode) {
       }
     }
   }
-  for (let attr in input) {
+  for (const attr in input) {
     // if attributes does not exist on the new node we removed it from the old node
     if (newNode.attributes[attr] && oldNode.attributes[attr]) {} else {
       oldNode.removeAttribute(attr)
@@ -97,7 +97,7 @@ let checkOld
 
 function diff (oldNode, newNode, oldParentNode) {
   let count = 0
-  let newStore = []
+  const newStore = []
 
   while (newNode) {
     count++
