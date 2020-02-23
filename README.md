@@ -1,6 +1,6 @@
-# locomotor v0.1.2
+# locomotor v0.1.3
 
-[![npm package](https://img.shields.io/badge/npm-0.1.2-blue.svg)](https://www.npmjs.com/package/locomotor) [![browser build](https://img.shields.io/badge/rawgit-0.1.2-ff69b4.svg)](https://cdn.rawgit.com/syarul/locomotor/master/locomotor-min.js)
+[![npm package](https://img.shields.io/badge/npm-0.1.3-blue.svg)](https://www.npmjs.com/package/locomotor) [![browser build](https://img.shields.io/badge/unpkg-0.1.3-ff69b4.svg)](https://unpkg.com/locomotor@0.1.3/locomotor-min.js)
 
 A react hook without lingo
 
@@ -25,7 +25,7 @@ Basically a strip version of react while using function hooks through
 - useEffect
 - useLayoutEffect
 
-Which power by michael-klein's [hookuspocus](https://github.com/michael-klein/hookuspocus)
+Which powered by michael-klein's [hookuspocus](https://github.com/michael-klein/hookuspocus)
 
 ### JSX cavets
 Using caleb's [babel-plugin-transform-jsx](https://github.com/calebmer/node_modules/tree/master/babel-plugin-transform-jsx), with cavets:-
@@ -41,7 +41,7 @@ Using caleb's [babel-plugin-transform-jsx](https://github.com/calebmer/node_modu
 ```jsx
 import { locoDOM, useState, useEffect } from 'locomotor'
 
-function App(props){
+function App (props) {
 
   const { label } = props || {}
 
