@@ -1,4 +1,4 @@
-import { useState, useEffect } from '../'
+import { useState, useEffect } from 'locomotor'
 
 function App (props) {
   const { todo } = props

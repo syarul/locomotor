@@ -33,6 +33,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.8.4",
+    "@babel/plugin-transform-react-jsx": "^7.8.3",
     "@babel/preset-env": "^7.8.4",
     "babel-eslint": "^10.0.3",
     "babel-loader": "^8.0.6",
@@ -54,13 +55,21 @@
     ],
     "plugins": [
       "transform-object-rest-spread",
-      [
-        "babel-plugin-transform-jsx",
-        {
+      ["babel-plugin-transform-jsx", {
           "useVariables": true,
           "module": "locomotor"
-        }
-      ]
+      }]
+    ]
+  },
+  "babel-react-jsx": {
+    "presets": [
+      "@babel/preset-env"
+    ],
+    "plugins": [
+      "transform-object-rest-spread",
+      ["@babel/plugin-transform-react-jsx", {
+        "pragma": "Locomotor"
+      }]
     ]
   },
   "standard": {

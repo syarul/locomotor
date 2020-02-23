@@ -30,9 +30,9 @@ const config = {
   },
   resolve: {
     modules: ['node_modules'],
-    extensions: ['*', '.js', '.styl'],
+    extensions: ['*', '.js'],
     alias: {
-      locomotor: path.resolve(__dirname, './locomotor')
+      locomotor: path.resolve(__dirname, './index.js')
     }
   },
   plugins: [

@@ -28,14 +28,50 @@ Basically a strip version of react while using function hooks through
 Which powered by michael-klein's [hookuspocus](https://github.com/michael-klein/hookuspocus)
 
 ### JSX cavets
-Using caleb's [babel-plugin-transform-jsx](https://github.com/calebmer/node_modules/tree/master/babel-plugin-transform-jsx), with cavets:-
+If using caleb's [babel-plugin-transform-jsx](https://github.com/calebmer/node_modules/tree/master/babel-plugin-transform-jsx):-
 - No Pragma
 - No * @jsx * comments
 - No createElement
 - No $$typeof, props, key, ref, or other specific React lingo
 - key is optional
-- You can still pass props as usual to function hooks
-- Component is not supported, but you can still use classes but it's not needed
+- You can still pass props as usual to function hooks but not necessary
+
+You don't need to add pragma import line to handle jsx transform on every files, ensure add `module` parameter to .babelrc plugins config
+```json
+{
+  "plugins": [
+    ["babel-plugin-transform-jsx", {
+     "useVariables": true,
+     "module": "locomotor"
+    }]
+  ]
+}
+```
+
+Also support ```@babel/plugin-transform-react-jsx```. Just add pragma to .babelrc plugin config
+```json
+{
+  "plugins": [
+    ["@babel/plugin-transform-react-jsx", {
+      "pragma": "Locomotor"
+    }]
+  ]
+}
+```
+then add import line to every ```*.js/*.jsx``` that needed tranformation.
+```js
+import Locomotor from 'locomotor'
+```
+
+Without jsx transformer you also can return your function hooks as js object instead
+```js
+{
+  elementName: 'div',
+  attributes: {},
+  children: ['hello locomotor!']
+}
+```
+Read [babel-plugin-transform-jsx](https://github.com/calebmer/node_modules/blob/master/babel-plugin-transform-jsx/README.md) for more info.
 
 ### Usage
 ```jsx

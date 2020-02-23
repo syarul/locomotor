@@ -1,4 +1,4 @@
-import { useState } from '../'
+import { useState } from 'locomotor'
 
 let i = 0
 

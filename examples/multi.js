@@ -1,4 +1,4 @@
-import { useState } from '../'
+import { useState } from 'locomotor'
 
 function Child (props) {
   const { foobar } = props
