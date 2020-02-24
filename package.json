@@ -1,8 +1,8 @@
 {
   "name": "locomotor",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "A react hook without lingo",
-  "main": "index.js",
+  "main": "locomotor-min.js",
   "scripts": {
     "start": "webpack-dev-server -d",
     "build": "npm run bundle",
@@ -33,12 +33,12 @@
   },
   "devDependencies": {
     "@babel/core": "^7.8.4",
+    "@babel/plugin-proposal-object-rest-spread": "^7.8.3",
     "@babel/plugin-transform-react-jsx": "^7.8.3",
     "@babel/preset-env": "^7.8.4",
     "babel-eslint": "^10.0.3",
     "babel-loader": "^8.0.6",
     "babel-plugin-transform-jsx": "^2.0.0",
-    "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "html-loader": "^0.5.5",
     "html-webpack-plugin": "^3.2.0",
     "pug": "^2.0.4",
@@ -54,11 +54,14 @@
       "@babel/preset-env"
     ],
     "plugins": [
-      "transform-object-rest-spread",
-      ["babel-plugin-transform-jsx", {
+      "@babel/plugin-proposal-object-rest-spread",
+      [
+        "babel-plugin-transform-jsx",
+        {
           "useVariables": true,
           "module": "locomotor"
-      }]
+        }
+      ]
     ]
   },
   "babel-react-jsx": {
@@ -66,10 +69,13 @@
       "@babel/preset-env"
     ],
     "plugins": [
-      "transform-object-rest-spread",
-      ["@babel/plugin-transform-react-jsx", {
-        "pragma": "Locomotor"
-      }]
+      "@babel/plugin-proposal-object-rest-spread",
+      [
+        "@babel/plugin-transform-react-jsx",
+        {
+          "pragma": "Locomotor"
+        }
+      ]
     ]
   },
   "standard": {

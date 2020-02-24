@@ -53,12 +53,12 @@ function createEl (vtree, fragment) {
   let node = null
   if (typeof vtree === 'object') {
     node = document.createElement(elementName)
-    Object.keys(attributes).map(attr => parseAttr(node, attr, attributes[attr]))
+    Array.from(Object.keys(attributes), attr => parseAttr(node, attr, attributes[attr]))
   } else {
     node = document.createTextNode(vtree)
   }
   if (children && children.length) {
-    children.map(child => createEl(child, node))
+    Array.from(children, child => createEl(child, node))
   }
   fragment.appendChild(node)
   return fragment
@@ -68,16 +68,18 @@ function handler (vtree, mount, transform, handle) {
   vtree instanceof Promise
     ? vtree.then(v => handle(mount, transform(v)))
     : handle(mount, transform(vtree))
-  return mount
+  return { vtree, mount }
 }
 
 class Renderer {
   render (...args) {
-    this.rootNode = handler(
+    const { vtree, mount } = handler(
       ...args,
       createEl,
       (rootNode, vnode) => rootNode.appendChild(vnode)
     )
+    this.rootNode = mount
+    this.vtree = vtree
   }
 
   on (vtree) {
