@@ -29,6 +29,7 @@
   },
   "homepage": "https://github.com/syarul/locomotor#readme",
   "dependencies": {
+    "clone": "^2.1.2",
     "hookuspocus": "git+https://github.com/michael-klein/hookuspocus.git"
   },
   "devDependencies": {

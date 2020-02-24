@@ -2,6 +2,7 @@ import { vtreeRender } from './renderer'
 import { pocus, dataMap } from 'hookuspocus/src/core'
 import { on, onStateChanged } from 'hookuspocus/src/on'
 import { useEffect } from 'hookuspocus/src/use_effect'
+import c from 'clone'
 
 // memo store, this basically to imitate React.memo
 // without using useCallback all over the place to
@@ -16,7 +17,10 @@ const flush = () => rootVtree.splice(0, 1)
 
 const cleanup = ({ e = [] }) => Array.from(e, run => run())
 
+let lc = 'init'
+
 onStateChanged(context => {
+  lc = 'run'
   const [rootContext] = dataMap.get(...rootVtree) || []
   const memo = memoMap.get(context) || {}
   // run side effects
@@ -54,10 +58,15 @@ onEffect((effect, context) => {
   })
 })
 
+const ctx = (context, attr) => attr.key !== undefined ? { elementName: context, key: attr.key } : context
+
 // HORRAY!! pass the context through pocus
 // so our function can use all hooks features
 // from hookuspocus https://github.com/michael-klein/hookuspocus
 function createContext ({ elementName, attributes }) {
+  console.log(memoMap.has(elementName))
+
+  elementName = lc === 'init' ? elementName.bind({}) : elementName
   if (!rootVtree.length) { rootVtree.push(elementName) }
   const node = pocus([attributes], elementName)
   // map the status/attributes where we will

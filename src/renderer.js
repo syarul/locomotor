@@ -1,4 +1,5 @@
 import patch from './patch'
+import { dataMap } from 'hookuspocus/src/core'
 
 function camelCase (s, o) {
   return `${s.replace(/([A-Z]+)/g, '-$1').toLowerCase()}:${o[s]};`
@@ -52,15 +53,23 @@ function createEl (vtree, fragment) {
   const { elementName, attributes, children } = vtree
   let node = null
   if (typeof vtree === 'object') {
-    node = document.createElement(elementName)
-    Array.from(Object.keys(attributes), attr => parseAttr(node, attr, attributes[attr]))
+    if(Array.isArray(vtree)) {
+      Array.from(vtree, vnode => createEl(vnode, fragment))
+    } else {
+      if(elementName === 'Locomotor.Fragment') {
+        Array.from(children, child => createEl(child, fragment))
+      } else {
+        node = document.createElement(elementName)
+        Array.from(Object.keys(attributes), attr => parseAttr(node, attr, attributes[attr]))
+      }
+    }
   } else {
     node = document.createTextNode(vtree)
   }
   if (children && children.length) {
     Array.from(children, child => createEl(child, node))
   }
-  fragment.appendChild(node)
+  node && fragment.appendChild(node)
   return fragment
 }
 
