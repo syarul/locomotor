@@ -55,26 +55,47 @@ onEffect((effect, context) => {
   })
 })
 
+function getContexFromMemo(context, key) {
+  if(!memoMap.has(context)){ 
+    return (key !== undefined && context.bind({})) || context
+  }
+  const memo = memoMap.get(context) || {}
+  if (key !== undefined){
+    return memo[key] || context.bind({})
+  }
+  return context
+}
+
 // HORRAY!! pass the context through pocus
 // so our function can use all hooks features
-// from hookuspocus https://github.com/michael-klein/hookuspocus
 function createContext ({ elementName, attributes }) {
-  const keyed = ctx(elementName, attributes)
 
-  // If keyed attributes exist we unbind elementName and map it to the key.
+  // If keyed attributes exist unbind the elementName and map it to the key.
   // Context should always refer to its original ref and remain pristine.
   // This should address function hooks thats go through Array mapping or 
   // use elsewhere** (not solve yet for reusable hooks)
 
+  const fn = getContexFromMemo(elementName, attributes.key)
+
   if (!rootVtree.length) { rootVtree.push(elementName) }
-  const node = pocus([attributes], elementName)
+  const node = pocus([attributes], fn, elementName)
   // map the status/attributes where we will
   // be able to retrive on subsequent runs
-  memoMap.set(elementName, {
-    s: true,      // pristine status
-    n: node,      // the render output
-    p: attributes // props
-  })
+ 
+  let store = memoMap.get(elementName) || {}
+  const s =  {
+    c: fn,
+    s: true,
+    n: node, 
+    p: attributes
+  }
+  if(attributes.key !== undefined){
+    store._keyed = true
+    store[attributes.key] = s
+  } else {
+    store = s
+  }
+  memoMap.set(elementName, store)
   return node
 }
 
