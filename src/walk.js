@@ -17,10 +17,7 @@ const flush = () => rootVtree.splice(0, 1)
 
 const cleanup = ({ e = [] }) => Array.from(e, run => run())
 
-let lc = 'init'
-
 onStateChanged(context => {
-  lc = 'run'
   const [rootContext] = dataMap.get(...rootVtree) || []
   const memo = memoMap.get(context) || {}
   // run side effects
@@ -58,15 +55,17 @@ onEffect((effect, context) => {
   })
 })
 
-const ctx = (context, attr) => attr.key !== undefined ? { elementName: context, key: attr.key } : context
-
 // HORRAY!! pass the context through pocus
 // so our function can use all hooks features
 // from hookuspocus https://github.com/michael-klein/hookuspocus
 function createContext ({ elementName, attributes }) {
-  console.log(memoMap.has(elementName))
+  const keyed = ctx(elementName, attributes)
 
-  elementName = lc === 'init' ? elementName.bind({}) : elementName
+  // If keyed attributes exist we unbind elementName and map it to the key.
+  // Context should always refer to its original ref and remain pristine.
+  // This should address function hooks thats go through Array mapping or 
+  // use elsewhere** (not solve yet for reusable hooks)
+
   if (!rootVtree.length) { rootVtree.push(elementName) }
   const node = pocus([attributes], elementName)
   // map the status/attributes where we will
