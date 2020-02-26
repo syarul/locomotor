@@ -21,10 +21,10 @@ onStateChanged(context => {
   const [rootContext] = dataMap.get(...rootVtree) || []
   const memo = memoMap.get(context) || {}
   // run side effects
-  cleanup(memo)
+  // cleanup(memo)
   memoMap.set(context, { 
     ...memo,
-    e: [],   // clear side effects
+    // e: [],   // clear side effects
     s: false // flag dirty status
   })
   // get root props
@@ -36,24 +36,24 @@ onStateChanged(context => {
 })
 
 // effect interceptor
-const onEffect = cb =>
-  on(useEffect, (data, effect) => {
-    const [context] = dataMap.get(data.context)
-    effect().then(clean => {
-      if (clean && typeof clean === 'function') {
-        cb(clean, context)
-      }
-    })
-  })
+// const onEffect = cb =>
+//   on(useEffect, (data, effect) => {
+//     const [context] = dataMap.get(data.context)
+//     effect().then(clean => {
+//       if (clean && typeof clean === 'function') {
+//         cb(clean, context)
+//       }
+//     })
+//   })
 
-onEffect((effect, context) => {
-  const memo = memoMap.get(context) || {}
-  const { e } = memo || []
-  memoMap.set(context, {
-    ...memo,
-    e: e.concat(effect)
-  })
-})
+// onEffect((effect, context) => {
+//   const memo = memoMap.get(context) || {}
+//   const { e } = memo || []
+//   memoMap.set(context, {
+//     ...memo,
+//     e: e.concat(effect)
+//   })
+// })
 
 function getContexFromMemo(context, key) {
   if(!memoMap.has(context)){ 
@@ -84,14 +84,14 @@ function createContext ({ elementName, attributes }) {
  
   let store = memoMap.get(elementName) || {}
   const s =  {
-    c: fn,
-    s: true,
     n: node, 
     p: attributes
   }
   if(attributes.key !== undefined){
-    store._keyed = true
-    store[attributes.key] = s
+    store.isKeyed = true
+    store.s = true
+    store.ctx = new (WeakMap || Map)()
+    store.ctx.set(fn, s)
   } else {
     store = s
   }
@@ -106,8 +106,9 @@ function walk (node) {
   const { elementName, attributes, children } = node
   if (typeof elementName === 'function') {
     const pris = memoMap.get(elementName) || {}
+    const p = (pris.isKeyed && pris[attributes.key]) || pris
     // return memoize node if status is pristine and props unchanged
-    return (pris.s && isEqual(pris.p, attributes) && pris.n) || createContext(node)
+    return (p.s && isEqual(p.p, attributes) && p.n) || createContext(node)
   }
   if (children && children.length) {
     return {
