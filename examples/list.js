@@ -1,11 +1,11 @@
 import { L as Fragment, useState } from 'locomotor'
 
 function List (props) {
-  const { foobar, key } = props
+  const { foobar, key, todo } = props
 
   console.log(`child ${key} is rendered`)
 
-  const [count, setCount] = useState(1)
+  const [count, setCount] = useState(0)
 
   const click = e => {
     setCount(count + 1)
@@ -13,7 +13,7 @@ function List (props) {
 
   return (
     <div key={key}>
-      <button onClick={click}>count : {count} || prop: {foobar} || key: {key}</button>
+      <button onClick={click}>count : {count} || prop: {foobar} || key: {key} || {todo} </button>
     </div>
   )
 }
@@ -21,18 +21,16 @@ function List (props) {
 // this the root App it will get rendered regardless of
 // children status
 function App (props) {
-  const { todo } = props
-
   const ls = []
 
-  for (let i =0;i<2;i++){
+  for (let i = 0; i < 5; i++) {
     ls.push({
-      foobar: 'foo'+i,
+      foobar: 'foo' + i,
       key: i
     })
   }
 
-  const ListEl = listProp => (<List {...listProp}/>)
+  const ListEl = listProp => (<List {...listProp} {...props} />)
 
   return (
     <Fragment>

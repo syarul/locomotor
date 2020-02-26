@@ -1,6 +1,6 @@
-# locomotor v0.1.4
+# locomotor v0.1.5
 
-[![npm package](https://img.shields.io/badge/npm-0.1.4-blue.svg)](https://www.npmjs.com/package/locomotor) [![browser build](https://img.shields.io/badge/unpkg-0.1.4-ff69b4.svg)](https://unpkg.com/locomotor@0.1.4/locomotor-min.js)
+[![npm package](https://img.shields.io/badge/npm-0.1.5-blue.svg)](https://www.npmjs.com/package/locomotor) [![browser build](https://img.shields.io/badge/unpkg-0.1.5-ff69b4.svg)](https://unpkg.com/locomotor@0.1.5/locomotor-min.js)
 
 A react hook without lingo
 
@@ -27,8 +27,10 @@ Basically a strip version of react while using function hooks through
 
 Which powered by michael-klein's [hookuspocus](https://github.com/michael-klein/hookuspocus)
 
-Internally it has React.memo immitation without using one and having to use ```useCallback``` all over the place to handle efficient rendering.
-Event delegation is a bit wonky now, the patching simply replace the old node if it has eventListener attached.
+- Internally it has ```React.memo``` immitation without using one and having to use ```useCallback``` all over the place to handle efficient rendering.
+- Event delegation is a bit wonky now, the patching simply replace the old node if it has eventListener attached.
+- Now properly handle keyed element with property ```key```.
+- Reusable hooks not yet tested.
 
 ### JSX cavets
 If using caleb's [babel-plugin-transform-jsx](https://github.com/calebmer/node_modules/tree/master/babel-plugin-transform-jsx):-

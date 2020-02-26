@@ -1,6 +1,6 @@
 {
   "name": "locomotor",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "A react hook without lingo",
   "main": "locomotor-min.js",
   "scripts": {
@@ -29,7 +29,6 @@
   },
   "homepage": "https://github.com/syarul/locomotor#readme",
   "dependencies": {
-    "clone": "^2.1.2",
     "hookuspocus": "git+https://github.com/michael-klein/hookuspocus.git"
   },
   "devDependencies": {

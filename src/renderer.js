@@ -1,5 +1,4 @@
 import patch from './patch'
-import { dataMap } from 'hookuspocus/src/core'
 
 function camelCase (s, o) {
   return `${s.replace(/([A-Z]+)/g, '-$1').toLowerCase()}:${o[s]};`
@@ -28,7 +27,7 @@ function classes (el, attr, value) {
 const nodeMap = new (WeakMap || Map)()
 
 function evt (el, attr, value) {
-  el.addEventListener(attr.replace(/^on/, '').toLowerCase(), value.bind(this), false)
+  el.addEventListener(attr.replace(/^on/, '').toLowerCase(), value, false)
   // on subsequent run we patch the node through WeakMap
   nodeMap.set(el, true)
 }
@@ -53,10 +52,10 @@ function createEl (vtree, fragment) {
   const { elementName, attributes, children } = vtree
   let node = null
   if (typeof vtree === 'object') {
-    if(Array.isArray(vtree)) {
+    if (Array.isArray(vtree)) {
       Array.from(vtree, vnode => createEl(vnode, fragment))
     } else {
-      if(elementName === 'Locomotor.Fragment') {
+      if (elementName === 'Locomotor.Fragment') {
         Array.from(children, child => createEl(child, fragment))
       } else {
         node = document.createElement(elementName)
