@@ -13,7 +13,7 @@ function List (props) {
 
   return (
     <div key={key}>
-      <button onClick={click}>count : {count} || prop: {foobar} || key: {key} || {todo} </button>
+      <button id={foobar} onClick={click}>count : {count} || prop: {foobar} || key: {key} || {todo} </button>
     </div>
   )
 }
@@ -38,5 +38,12 @@ function App (props) {
     </Fragment>
   )
 }
+
+// setTimeout(() => {
+//   setInterval(() => {
+//     let i = Math.floor(Math.random() * 5)
+//     document.getElementById(`foo${i}`).click()
+//   }, 50)
+// }, 2000)
 
 export default App

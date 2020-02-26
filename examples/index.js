@@ -1,5 +1,5 @@
 import { locoDOM } from 'locomotor'
-import App from './list'
+import App from './multi'
 
 const props = { todo: 'called' }
 

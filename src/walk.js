@@ -8,27 +8,27 @@ import { useEffect } from 'hookuspocus/src/use_effect'
 // handle efficient rendering, rather that we store
 // the current state of of rendering and flag the
 // context which is dirty on subsequent lifeCycle
-const fnMap = new (WeakMap || Map)()
-const memoMap = new (WeakMap || Map)()
 
-const rootVtree = []
-// flush root vtree when we dont want it anymore
-const flush = () => rootVtree.splice(0, 1)
+const lifeCycles = new (WeakMap || Map)()
+lifeCycles.stack = new (WeakMap || Map)()
+lifeCycles.base = []
+lifeCycles.fn = new (WeakMap || Map)()
 
 const cleanup = ({ e = [] }) => Array.from(e, run => run())
 
 onStateChanged(context => {
-  const [rootContext] = dataMap.get(...rootVtree) || []
-  const fn = fnMap.get(context)
+  const [rootBaseContext] = lifeCycles.base
+  const [rootContext] = lifeCycles.get(rootBaseContext)
+  const ctx = lifeCycles.fn.get(context)
   // run side effects
-  cleanup(fn)
+  cleanup(ctx)
   // flag context dirty
-  fnMap.set(context, {
-    ...fn,
+  lifeCycles.fn.set(context, {
+    ...ctx,
     s: false
   })
   // get root props
-  const { p } = memoMap.get(rootContext)
+  const { p } = lifeCycles.fn.get(rootContext)
   // generate an efficient new vtree
   const vtree = pocus([p], rootContext)
   // emit changes to render so patching can be done
@@ -37,76 +37,72 @@ onStateChanged(context => {
 
 // effect interceptor
 const onEffect = cb =>
-  on(useEffect, (data, effect) => {
+  on(useEffect, (data, differEffect) => {
     const [context] = dataMap.get(data.context)
-    effect().then(clean => {
-      if (clean && typeof clean === 'function') {
-        cb(clean, context)
+    differEffect().then(effect => {
+      if (effect && typeof effect === 'function') {
+        cb(effect, context)
       }
     })
   })
 
 onEffect((effect, context) => {
-  const fn = fnMap.get(context) || {}
-  const { e } = fn || []
-  fnMap.set(context, {
-    ...fn,
+  const ctx = lifeCycles.fn.get(context) || {}
+  const { e } = ctx || []
+  lifeCycles.fn.set(context, {
+    ...ctx,
     e: e.concat(effect)
   })
 })
 
-function getContexFromMemo (context, key) {
-  if (!memoMap.has(context)) {
-    return (key !== undefined && context.bind({})) || context
-  }
-  const memo = memoMap.get(context) || {}
-  if (key !== undefined) {
-    return (memo[key] && memo[key].c) || context.bind({})
-  }
-  return context
+// reset stacks once render done
+const lifeCyclesRunReset = () => {
+  Array.from(lifeCycles.base, context =>
+    lifeCycles.stack.set(context, 0)
+  )
+}
+
+// generate reusable functions hooks, key is not
+// needed since array contexts should be handled
+// properly through this approach
+function getContex (context) {
+  const stack = lifeCycles.stack.get(context) || 0
+  const eStack = lifeCycles.get(context) || []
+  const cStack = eStack[stack] || context.bind({})
+  eStack[stack] = cStack
+  lifeCycles.set(context, eStack)
+  lifeCycles.stack.set(context, stack + 1)
+  !~lifeCycles.base.indexOf(context) && lifeCycles.base.push(context)
+  return cStack
 }
 
 // HORRAY!! pass the context through pocus
 // so our function can use all hooks features
 function createContext ({ elementName, attributes }) {
-  if (!rootVtree.length) { rootVtree.push(elementName) }
-
   // If keyed attributes exist unbind the elementName and map it to the key.
   // This should address function hooks thats go through Array mapping or
   // use elsewhere** (not tested yet for reusable hooks)
 
-  const fn = getContexFromMemo(elementName, attributes.key)
+  const context = getContex(elementName)
 
   let node = null
 
-  const { s, n, p } = fnMap.get(fn) || {}
+  const { s, n, p } = lifeCycles.fn.get(context) || {}
 
   // return memoize node if status is pristine and props unchanged
   if (s && isEqual(p, attributes)) {
     node = n
   } else {
-    node = pocus([attributes], fn)
+    node = pocus([attributes], context)
   }
 
   // map the status/attributes where we will be able to retrive on subsequent runs
-  fnMap.set(fn, {
+  lifeCycles.fn.set(context, {
     s: true,
     n: node,
     p: attributes
   })
 
-  // use memoMap as way to retrive created unbind context
-  let store = memoMap.get(elementName) || {}
-  const st = {
-    c: fn,
-    p: attributes
-  }
-  if (attributes.key !== undefined) {
-    store[attributes.key] = st
-  } else {
-    store = st
-  }
-  memoMap.set(elementName, store)
   return node
 }
 
@@ -129,5 +125,5 @@ function walk (node) {
 
 export {
   walk as default,
-  flush
+  lifeCyclesRunReset
 }

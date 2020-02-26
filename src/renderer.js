@@ -1,4 +1,5 @@
 import patch from './patch'
+import { lifeCyclesRunReset } from './walk'
 
 function camelCase (s, o) {
   return `${s.replace(/([A-Z]+)/g, '-$1').toLowerCase()}:${o[s]};`
@@ -76,22 +77,35 @@ function handler (vtree, mount, transform, handle) {
   vtree instanceof Promise
     ? vtree.then(v => handle(mount, transform(v)))
     : handle(mount, transform(vtree))
-  return { vtree, mount }
+  return mount
 }
 
 class Renderer {
   render (...args) {
-    const { vtree, mount } = handler(
+    this.r = handler(
       ...args,
       createEl,
-      (rootNode, vnode) => rootNode.appendChild(vnode)
+      (rootNode, vnode) => {
+        rootNode.appendChild(vnode)
+        this.emit('init')
+      }
     )
-    this.rootNode = mount
-    this.vtree = vtree
+  }
+
+  emit (ev) {
+    lifeCyclesRunReset(ev)
   }
 
   on (vtree) {
-    handler(vtree, this.rootNode, createEl, patch)
+    handler(
+      vtree,
+      this.r,
+      createEl,
+      (rootNode, vnode) => {
+        patch(rootNode, vnode)
+        this.emit('update')
+      }
+    )
   }
 }
 

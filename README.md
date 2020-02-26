@@ -1,22 +1,10 @@
-# locomotor v0.1.5
+# locomotor v0.1.6
 
-[![npm package](https://img.shields.io/badge/npm-0.1.5-blue.svg)](https://www.npmjs.com/package/locomotor) [![browser build](https://img.shields.io/badge/unpkg-0.1.5-ff69b4.svg)](https://unpkg.com/locomotor@0.1.5/locomotor-min.js)
+[![npm package](https://img.shields.io/badge/npm-0.1.6-blue.svg)](https://www.npmjs.com/package/locomotor) [![browser build](https://img.shields.io/badge/unpkg-0.1.6-ff69b4.svg)](https://unpkg.com/locomotor@0.1.6/locomotor-min.js)
 
 A react hook without lingo
 
 > Experimental stage
-
-Install with npm
-
-```npm i locomotor```
-
-### Quick Getting Start
-
-clone repo [https://github.com/syarul/getting-start-locomotor](https://github.com/syarul/getting-start-locomotor)
-
-check into the clone directory
-
-```npm install && npm start```
 
 ### What's this
 Basically a strip version of react while using function hooks through
@@ -27,10 +15,31 @@ Basically a strip version of react while using function hooks through
 
 Which powered by michael-klein's [hookuspocus](https://github.com/michael-klein/hookuspocus)
 
-- Internally it has ```React.memo``` immitation without using one and having to use ```useCallback``` all over the place to handle efficient rendering.
+### What's the different
+
+- Internally it has ```React.memo``` immitation without using one and you don't need to use ```useCallback``` all over the place to handle efficient rendering. Function hooks are only called when state/props changed (*may need to add force render soon*).
+- Reusable function hooks.
+- Do not need ```key``` property when handling list/array mapping.
+- You may not need to ```import``` pragma on every js/jsx that need transpiling.
+- It only around 4kb gzip.
+
+Some concern includes:-
 - Event delegation is a bit wonky now, the patching simply replace the old node if it has eventListener attached.
-- Now properly handle keyed element with property ```key```.
-- Reusable hooks not yet tested.
+- Test unit and mvc sample incoming.
+
+### Quick Getting Start
+
+Install with npm
+
+```npm i locomotor```
+
+or
+
+clone repo [https://github.com/syarul/getting-start-locomotor](https://github.com/syarul/getting-start-locomotor)
+
+check into the clone directory
+
+```npm install && npm start```
 
 ### JSX cavets
 If using caleb's [babel-plugin-transform-jsx](https://github.com/calebmer/node_modules/tree/master/babel-plugin-transform-jsx):-

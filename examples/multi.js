@@ -24,10 +24,17 @@ function Child1 (props) {
 function Child2 (props) {
   const { foobar } = props
 
-  console.log('child2 is rendered')
+  console.log(`child2 of ${foobar} is rendered`)
+
+  const [count, setCount] = useState(1)
+
+  const click = e => {
+    setCount(count + 1)
+  }
 
   return (
     <div>
+      <button onClick={click}>count : {count}</button>
       <div>Current child2 state is: {foobar}</div>
     </div>
   )
@@ -51,7 +58,8 @@ function App (props) {
       </button>
       <p>sub hook</p>
       <Child1 foobar={foobar} />
-      <Child2 foobar={foobar} />
+      <Child2 foobar={1} />
+      <Child2 foobar={2} />
     </div>
   )
 }
