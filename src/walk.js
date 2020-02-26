@@ -22,6 +22,7 @@ onStateChanged(context => {
   const memo = memoMap.get(context) || {}
   // run side effects
   // cleanup(memo)
+  console.log(dataMap.get(context))
   memoMap.set(context, { 
     ...memo,
     // e: [],   // clear side effects
@@ -61,7 +62,7 @@ function getContexFromMemo(context, key) {
   }
   const memo = memoMap.get(context) || {}
   if (key !== undefined){
-    return memo[key] || context.bind({})
+    return (memo[key] && memo[key].c) || context.bind({})
   }
   return context
 }
@@ -84,18 +85,19 @@ function createContext ({ elementName, attributes }) {
  
   let store = memoMap.get(elementName) || {}
   const s =  {
-    n: node, 
+    c: fn,
+    n: node,
     p: attributes
   }
   if(attributes.key !== undefined){
-    store.isKeyed = true
-    store.s = true
-    store.ctx = new (WeakMap || Map)()
-    store.ctx.set(fn, s)
+    store[attributes.key] = s
   } else {
     store = s
   }
-  memoMap.set(elementName, store)
+  memoMap.set(elementName, {
+    ...store,
+    s: true
+  })
   return node
 }
 
@@ -106,9 +108,10 @@ function walk (node) {
   const { elementName, attributes, children } = node
   if (typeof elementName === 'function') {
     const pris = memoMap.get(elementName) || {}
-    const p = (pris.isKeyed && pris[attributes.key]) || pris
+    console.log(pris, attributes.key)
+    const p = (attributes.key !== undefined && pris[attributes.key]) || pris
     // return memoize node if status is pristine and props unchanged
-    return (p.s && isEqual(p.p, attributes) && p.n) || createContext(node)
+    return (pris.s && isEqual(p.p, attributes) && p.n) || createContext(node)
   }
   if (children && children.length) {
     return {

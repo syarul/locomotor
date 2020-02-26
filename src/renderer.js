@@ -28,7 +28,7 @@ function classes (el, attr, value) {
 const nodeMap = new (WeakMap || Map)()
 
 function evt (el, attr, value) {
-  el.addEventListener(attr.replace(/^on/, '').toLowerCase(), value, false)
+  el.addEventListener(attr.replace(/^on/, '').toLowerCase(), value.bind(this), false)
   // on subsequent run we patch the node through WeakMap
   nodeMap.set(el, true)
 }
