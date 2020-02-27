@@ -1,6 +1,6 @@
-# locomotor v0.1.6
+# locomotor v0.1.7
 
-[![npm package](https://img.shields.io/badge/npm-0.1.6-blue.svg)](https://www.npmjs.com/package/locomotor) [![browser build](https://img.shields.io/badge/unpkg-0.1.6-ff69b4.svg)](https://unpkg.com/locomotor@0.1.6/locomotor-min.js)
+[![npm package](https://img.shields.io/badge/npm-0.1.7-blue.svg)](https://www.npmjs.com/package/locomotor) [![browser build](https://img.shields.io/badge/unpkg-0.1.7-ff69b4.svg)](https://unpkg.com/locomotor@0.1.7/locomotor-min.js)
 
 A react hook without lingo
 
@@ -15,9 +15,13 @@ Basically a strip version of react while using function hooks through
 
 Which powered by michael-klein's [hookuspocus](https://github.com/michael-klein/hookuspocus)
 
+Added features
+- createContext
+- useContext
+
 ### What's the different
 
-- Internally it has ```React.memo``` immitation without using one and you don't need to use ```useCallback``` all over the place to handle efficient rendering. Function hooks are only called when state/props changed (*may need to add force render soon*).
+- Internally it has ```React.memo``` immitation without using one and you don't need to use ```useCallback``` all over the place to handle efficient rendering. Function hooks are only called when state/props changed (*may need to add force render soon*, vtree checking not yet resolve).
 - Reusable function hooks.
 - Do not need ```key``` property when handling list/array mapping.
 - You may not need to ```import``` pragma on every js/jsx that need transpiling.
@@ -25,9 +29,7 @@ Which powered by michael-klein's [hookuspocus](https://github.com/michael-klein/
 
 Some concern includes:-
 - Event delegation is a bit wonky now, the patching simply replace the old node if it has eventListener attached.
-- Test unit tba.
-- MVC sample tba.
-- Custom hooks/provider tba.
+- Test unit and mvc sample incoming.
 
 ### Quick Getting Start
 

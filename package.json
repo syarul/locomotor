@@ -1,6 +1,6 @@
 {
   "name": "locomotor",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "A react hook without lingo",
   "main": "locomotor-min.js",
   "scripts": {
