@@ -12,9 +12,9 @@ function List (props) {
   }
 
   return (
-    <p>
-      <button id={foobar} onClick={click}>count : {count} || prop: {foobar} || {todo} </button>
-    </p>
+    <li>
+      <button onClick={click}>count : {count} || prop: {foobar} || {todo} </button>
+    </li>
   )
 }
 
@@ -33,16 +33,12 @@ function App (props) {
 
   return (
     <Fragment>
-      {ls.map(ListEl)}
+      <List foobar='solo' {...props} />
+      <ul>
+        {ls.map(ListEl)}
+      </ul>
     </Fragment>
   )
 }
-
-// setTimeout(() => {
-//   setInterval(() => {
-//     let i = Math.floor(Math.random() * 5)
-//     document.getElementById(`foo${i}`).click()
-//   }, 50)
-// }, 2000)
 
 export default App

@@ -1,5 +1,5 @@
 import { locoDOM } from 'locomotor'
-import App from './multi'
+import App from './context-provider'
 
 const props = { todo: 'called' }
 

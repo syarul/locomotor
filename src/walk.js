@@ -1,5 +1,5 @@
 import { vtreeRender } from './renderer'
-import { pocus, dataMap } from 'hookuspocus/src/core'
+import { hookus, pocus, dataMap } from 'hookuspocus/src/core'
 import { on, onStateChanged } from 'hookuspocus/src/on'
 import { useEffect } from 'hookuspocus/src/use_effect'
 
@@ -13,6 +13,9 @@ const lifeCycles = new (WeakMap || Map)()
 lifeCycles.stack = new (WeakMap || Map)()
 lifeCycles.base = []
 lifeCycles.fn = new (WeakMap || Map)()
+
+// simple compare for objects
+const isEqual = (o, s) => JSON.stringify(o) === JSON.stringify(s)
 
 const cleanup = ({ e = [] }) => Array.from(e, run => run())
 
@@ -65,14 +68,14 @@ const lifeCyclesRunReset = () => {
 // generate reusable functions hooks, key is not
 // needed since array contexts should be handled
 // properly through this approach
-function getContex (context) {
-  const stack = lifeCycles.stack.get(context) || 0
-  const eStack = lifeCycles.get(context) || []
-  const cStack = eStack[stack] || context.bind({})
+function getContex (fn) {
+  const stack = lifeCycles.stack.get(fn) || 0
+  const eStack = lifeCycles.get(fn) || []
+  const cStack = eStack[stack] || fn.bind({})
   eStack[stack] = cStack
-  lifeCycles.set(context, eStack)
-  lifeCycles.stack.set(context, stack + 1)
-  !~lifeCycles.base.indexOf(context) && lifeCycles.base.push(context)
+  lifeCycles.set(fn, eStack)
+  lifeCycles.stack.set(fn, stack + 1)
+  !~lifeCycles.base.indexOf(fn) && lifeCycles.base.push(fn)
   return cStack
 }
 
@@ -96,6 +99,17 @@ function createContext ({ elementName, attributes }) {
     node = pocus([attributes], context)
   }
 
+  // provider updates
+  if (typeof node.elementName === 'object' && node.elementName.elementName === 'Locomotor.Provider') {
+    const value = providerMap.get(node.elementName.context) || {}
+    const currentValue = node.attributes.value || {}
+    const update = {
+      ...value,
+      ...currentValue
+    }
+    providerMap.set(node.elementName.context, update)
+  }
+
   // map the status/attributes where we will be able to retrive on subsequent runs
   lifeCycles.fn.set(context, {
     s: true,
@@ -106,8 +120,28 @@ function createContext ({ elementName, attributes }) {
   return node
 }
 
-// simple compare for objects
-const isEqual = (o, s) => JSON.stringify(o) === JSON.stringify(s)
+const providerMap = new (WeakMap || Map)()
+
+function locomotorCreateContext(value = {}) {
+  const context = {
+    Provider: 'Locomotor.Provider'
+  }
+  providerMap.set(context, value)
+  return {
+    Provider: {
+      elementName: 'Locomotor.Provider',
+      context
+    }
+  }
+}
+
+const useContext = hookus((data, { Provider }) => {
+  console.log(providerMap, Provider, providerMap.get(context))
+  const { context } = Provider
+  data.s = data.s !== undefined ? data.s : (providerMap.get(context) || {})
+  console.log(context)
+  return data.s
+})
 
 function walk (node) {
   const { elementName, children } = node
@@ -125,5 +159,8 @@ function walk (node) {
 
 export {
   walk as default,
-  lifeCyclesRunReset
+  lifeCyclesRunReset,
+  locomotorCreateContext as createContext,
+  useContext,
+  providerMap
 }

@@ -25,7 +25,9 @@ Which powered by michael-klein's [hookuspocus](https://github.com/michael-klein/
 
 Some concern includes:-
 - Event delegation is a bit wonky now, the patching simply replace the old node if it has eventListener attached.
-- Test unit and mvc sample incoming.
+- Test unit tba.
+- MVC sample tba.
+- Custom hooks/provider tba.
 
 ### Quick Getting Start
 

@@ -1,5 +1,5 @@
 import patch from './patch'
-import { lifeCyclesRunReset } from './walk'
+import { lifeCyclesRunReset, providerMap } from './walk'
 
 function camelCase (s, o) {
   return `${s.replace(/([A-Z]+)/g, '-$1').toLowerCase()}:${o[s]};`
@@ -56,8 +56,15 @@ function createEl (vtree, fragment) {
     if (Array.isArray(vtree)) {
       Array.from(vtree, vnode => createEl(vnode, fragment))
     } else {
+      // handle fragment 
       if (elementName === 'Locomotor.Fragment') {
         Array.from(children, child => createEl(child, fragment))
+      // handle provider
+      } else if (typeof elementName === 'object' && elementName.elementName === 'Locomotor.Provider'){
+        // providerMap.set(elementName, (elementName.attributes && elementName.attributes.value) || {})
+        Array.from(children, child => {
+          createEl(child, fragment)
+        })
       } else {
         node = document.createElement(elementName)
         Array.from(Object.keys(attributes), attr => parseAttr(node, attr, attributes[attr]))
@@ -82,6 +89,7 @@ function handler (vtree, mount, transform, handle) {
 
 class Renderer {
   render (...args) {
+    console.log(args[0])
     this.r = handler(
       ...args,
       createEl,
