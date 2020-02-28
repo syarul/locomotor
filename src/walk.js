@@ -1,7 +1,7 @@
 import { vtreeRender } from './renderer'
 import { pocus, dataMap } from 'hookuspocus/src/core'
 import { on, onStateChanged } from 'hookuspocus/src/on'
-import { useEffect } from 'hookuspocus/src/use_effect'
+import { useLayoutEffect } from 'hookuspocus/src/use_layout_effect'
 
 // prop store
 const propMap = new (WeakMap || Map)()
@@ -14,31 +14,40 @@ const flush = () => rootVtree.splice(0, 1)
 
 const cleanup = (map, context) => {
   (map.get(context) || []).map(run => run())
-  map.set(context, [])
+  // map.set(context, [])
 }
 
 onStateChanged(context => {
   const [rootContext] = dataMap.get(...rootVtree) || []
+  // console.log(effectMap)
   // cleanup all side effects
-  cleanup(effectMap, context)
+  // cleanup(effectMap, context)
   // generate new vtree
   const vtree = pocus([propMap.get(rootContext)], rootContext)
   // emit changes to render so patching can be done
   vtreeRender(vtree)
 })
 
+const values = new WeakMap()
 // effect interceptor
 const onEffect = cb =>
-  on(useEffect, (data, effect) => {
+  on(useLayoutEffect, (data, effect, value) => {
     const [context] = dataMap.get(data.context)
-    effect().then(clean => {
-      if (clean && typeof clean === 'function') {
-        cb(clean, context)
-      }
-    })
+    const effects = effectMap.get(context) || []
+    const cValue = values.get(context) || []
+    values.set(context, value)
+    if (!effects.length || cValue !== value) {
+      cleanup(effectMap, context)
+      effect().then(clean => {
+        if (clean && typeof clean === 'function') {
+          cb(clean, context)
+        }
+      })
+    }
   })
 
 onEffect((effect, context) => {
+  // console.log(effect)
   const effects = effectMap.get(context) || []
   effects.push(effect)
   effectMap.set(context, effects)

@@ -7,6 +7,8 @@ function App (props) {
 
   const [time, setTime] = useState(new Date().toLocaleTimeString())
 
+  console.log('called')
+
   useEffect(() => {
     console.log(`timer ${todo} ${timer ? 'on' : 'off'}!`)
 
