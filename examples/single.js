@@ -14,6 +14,9 @@ function App (props) {
 
   useEffect(() => {
     console.log(`${foobar} called !!!`)
+    return () => {
+      console.log('out')
+    }
   }, [foobar])
 
   return (

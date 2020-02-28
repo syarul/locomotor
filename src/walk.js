@@ -1,7 +1,7 @@
 import { vtreeRender } from './renderer'
 import { hookus, pocus, dataMap } from 'hookuspocus/src/core'
 import { on, onStateChanged } from 'hookuspocus/src/on'
-import { useEffect } from 'hookuspocus/src/use_effect'
+import { useLayoutEffect } from 'hookuspocus/src/use_layout_effect'
 import { useReducer } from 'hookuspocus/src/use_reducer'
 
 // memo store, this basically to imitate React.memo
@@ -17,9 +17,13 @@ lifeCycles.fn = new (WeakMap || Map)()
 lifeCycles.parent = new (WeakMap || Map)()
 
 // simple compare for objects
-// const isEqual = (o, s) => JSON.stringify(o) === JSON.stringify(s)
+const isEqual = (o, s) => JSON.stringify(o) === JSON.stringify(s)
 
-const cleanup = ({ e = [] }) => Array.from(e, run => run())
+const cleanup = context => {
+  const { e } = context
+  Array.from(e || [], run => run())
+  context.e = []
+}
 
 // flag context dirty
 const flag = (context, ctx) => {
@@ -27,11 +31,6 @@ const flag = (context, ctx) => {
     ...ctx,
     s: false
   })
-  // const parentContext = parentMap.get(context)
-  // const pCtx = lifeCycles.fn.get(parentContext)
-  // if (parentContext && pCtx) {
-  //   flag(parentContext && pCtx)
-  // }
 }
 
 const updateVtree = (node, context, newNode) => {
@@ -50,45 +49,38 @@ const updateVtree = (node, context, newNode) => {
   return node
 }
 
+const render = (...args) =>
+  vtreeRender(updateVtree.apply(null, args))
+
 onStateChanged(context => {
   const [rootBaseContext] = lifeCycles.base
   const [rootContext] = lifeCycles.get(rootBaseContext)
   const ctx = lifeCycles.fn.get(context)
-  console.log(ctx)
+
   // run side effects
   cleanup(ctx)
+  flag(context, ctx)
 
   const node = pocus([ctx.p], context)
 
-  // const vtree = lifeCycles.fn.get(rootContext)
-  // let newVtree
-  // if(vtree.n instanceof Promise) {
-  //   vtree.n.then(n => {
-  //     newVtree = updateVtree(n, context, node)
-  //     // console.log(newVtree)
-  //     vtreeRender(newVtree)
-  //   })
-  // } else {
-  //   newVtree = updateVtree(vtree.n, context, node)
-  //   // console.log(newVtree)
-  //   vtreeRender(newVtree)
-  // }
-  // emit changes to render so patching can be done
+  const vtree = lifeCycles.fn.get(rootContext)
 
-  // flag(context, ctx)
+  // emit changes to render so patching can be done
+  vtree.n instanceof Promise
+    ? vtree.n.then(n => render(n, context, node))
+    : render(vtree.n, context, node)
 
   // get root props
-  const { p } = lifeCycles.fn.get(rootContext)
+  // const { p } = lifeCycles.fn.get(rootContext)
   // generate an efficient new vtree
-  const vtree = pocus([p], rootContext)
+  // const vtree = pocus([p], rootContext)
   // emit changes to render so patching can be done
-  vtreeRender(vtree)
+  // vtreeRender(vtree)
 })
 
 // effect interceptor
 const onEffect = cb =>
-  on(useEffect, (data, differEffect) => {
-    console.log('aw')
+  on(useLayoutEffect, (data, differEffect) => {
     const [context] = dataMap.get(data.context)
     differEffect().then(effect => {
       if (effect && typeof effect === 'function') {
@@ -98,9 +90,8 @@ const onEffect = cb =>
   })
 
 onEffect((effect, context) => {
-  console.log('aw')
   const ctx = lifeCycles.fn.get(context) || {}
-  const { e } = ctx || []
+  const { e = [] } = ctx || {}
   lifeCycles.fn.set(context, {
     ...ctx,
     e: e.concat(effect)
@@ -176,16 +167,14 @@ const useContext = hookus((data, context) => {
   return state
 })
 
-// const parentMap = new (WeakMap || Map)()
-// const cycleNodes = []
+const setNode = (node, context) => {
+  node.context = context
+  if (node.elementName.match(/Locomotor.Provider./)) {
+    const [stack] = node.elementName.match(/([^Locomotor.Provider.])(.*)/g)
+    updateProvider(stack, node.attributes)
+  }
+}
 
-// function connectVtree (context) {
-//   cycleNodes.push(context)
-//   if (cycleNodes.length === 2) {
-//     parentMap.set(context, cycleNodes[0])
-//     cycleNodes.shift()
-//   }
-// }
 // HORRAY!! pass the context through pocus
 // so our function can use all hooks features
 function createElement ({ elementName, attributes }) {
@@ -195,29 +184,24 @@ function createElement ({ elementName, attributes }) {
 
   const context = getContex(elementName)
 
-  // connectVtree(context)
-
   let node = null
 
-  // const { s, n, p } = lifeCycles.fn.get(context) || {}
+  const { s, n, p } = lifeCycles.fn.get(context) || {}
 
   // return memoize node if status is pristine and props unchanged
-  // need to flag if parent node is pristine - tba
-  // if (s && isEqual(p, attributes)) {
-  // node = n
-  // } else {
-  node = pocus([attributes], context)
-  node.context = context
-  // }
+  if (s && isEqual(p, attributes)) {
+    node = n
+  } else {
+    node = pocus([attributes], context)
+  }
 
-  // if (node.elementName.match(/Locomotor.Provider./)) {
-  //   const [stack] = node.elementName.match(/([^Locomotor.Provider.])(.*)/g)
-  //   updateProvider(stack, node.attributes)
-  // }
+  node instanceof Promise
+    ? node.then(n => setNode(n, context))
+    : setNode(node, context)
 
   // map the status/attributes where we will be able to retrive on subsequent runs
   lifeCycles.fn.set(context, {
-    // c: true,
+    s: true,
     n: node,
     p: attributes
   })

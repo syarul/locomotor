@@ -107,10 +107,6 @@ class Renderer {
     this.deffer().then(lifeCyclesRunReset)
   }
 
-  after () {
-    console.log(this.r)
-  }
-
   on (vtree) {
     handler(
       vtree,

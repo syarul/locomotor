@@ -21,7 +21,7 @@ Added features
 
 ### What's the different
 
-- Internally it has ```React.memo``` immitation without using one and you don't need to use ```useCallback``` all over the place to handle efficient rendering. Function hooks are only called when state/props changed (*may need to add force render soon*, vtree checking not yet resolve).
+- Internally it has ```React.memo``` immitation without using one and you don't need to use ```useCallback``` all over the place to handle efficient rendering. Function hooks are only called when state/props changed (*may need to add force render soon*).
 - Reusable function hooks.
 - Do not need ```key``` property when handling list/array mapping.
 - You may not need to ```import``` pragma on every js/jsx that need transpiling.
