@@ -57,7 +57,7 @@ function createEl (vtree, fragment) {
       Array.from(vtree, vnode => createEl(vnode, fragment))
     } else {
       // if (!elementName) return fragment
-      if(context) {
+      if (context) {
         // handle element with context, we need to attach listener
         // on dismount to clean all side effects - tba
       }

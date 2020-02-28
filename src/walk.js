@@ -16,21 +16,17 @@ lifeCycles.base = []
 lifeCycles.fn = new (WeakMap || Map)()
 lifeCycles.ef = new (WeakMap || Map)()
 
+const providerMap = new (WeakMap || Map)()
+providerMap.h = []
+providerMap.u = []
+providerMap.d = new (WeakMap || Map)()
+
 // simple compare for objects
 const isEqual = (o, s) => JSON.stringify(o) === JSON.stringify(s)
 
 const cleanup = context => {
   const { e } = context
   Array.from(e || [], run => run())
-  context.e = []
-}
-
-// flag context dirty
-const flag = (context, ctx) => {
-  lifeCycles.fn.set(context, {
-    ...ctx,
-    s: false
-  })
 }
 
 const updateVtree = (node, context, newNode) => {
@@ -57,9 +53,11 @@ onStateChanged(context => {
   const [rootContext] = lifeCycles.get(rootBaseContext)
   const ctx = lifeCycles.fn.get(context)
 
-  // run side effects
-  // cleanup(ctx)
-  flag(context, ctx)
+  // flag context dirty, might be useful on some casses
+  lifeCycles.fn.set(context, {
+    ...ctx,
+    s: false
+  })
 
   const node = pocus([ctx.p], context)
 
@@ -70,11 +68,11 @@ onStateChanged(context => {
     ? vtree.n.then(n => render(n, context, node))
     : render(vtree.n, context, node)
 
-  // get root props
+  // // get root props
   // const { p } = lifeCycles.fn.get(rootContext)
-  // generate an efficient new vtree
+  // // generate an efficient new vtree
   // const vtree = pocus([p], rootContext)
-  // emit changes to render so patching can be done
+  // // emit changes to render so patching can be done
   // vtreeRender(vtree)
 })
 
@@ -86,12 +84,9 @@ const onEffect = cb =>
     const preVal = lifeCycles.ef.get(context)
     lifeCycles.ef.set(context, posVal)
     const ctx = lifeCycles.fn.get(context)
-    if(!ctx) return
-    console.log(ctx)
-    const effects = ctx.e || []
-    console.log(preVal !== posVal)
-    if (!effects.length || preVal !== posVal) {
-      console.log(1)
+    if (!ctx) return
+    if ((ctx && !(ctx.e || []).length) || !isEqual(preVal, posVal)) {
+      // cleanup side effects
       cleanup(ctx)
       differEffect().then(effect => {
         if (effect && typeof effect === 'function') {
@@ -104,12 +99,10 @@ const onEffect = cb =>
 onEffect((effect, context) => {
   const ctx = lifeCycles.fn.get(context) || {}
   const { e = [] } = ctx || {}
-  const eff = {
+  lifeCycles.fn.set(context, {
     ...ctx,
     e: e.concat(effect)
-  }
-  console.log(eff)
-  lifeCycles.fn.set(context, eff)
+  })
 })
 
 const lifeCyclesRunReset = () => {
@@ -127,7 +120,7 @@ const lifeCyclesRunReset = () => {
 
 // generate reusable functions hooks, key is not
 // needed since each function hooks is isolated
-function getContex (fn) {
+const getContex = fn => {
   const stack = lifeCycles.stack.get(fn) || 0
   const eStack = lifeCycles.get(fn) || []
   const cStack = eStack[stack] || fn.bind({})
@@ -138,7 +131,7 @@ function getContex (fn) {
   return cStack
 }
 
-function updateProvider (stack, attributes) {
+const updateProvider = (stack, attributes) => {
   const value = providerMap.get(providerMap.h[stack]) || {}
   let v = { ...value }
   for (const attr in attributes) {
@@ -153,12 +146,7 @@ function updateProvider (stack, attributes) {
   providerMap.u.push(provider.bind(null, v))
 }
 
-const providerMap = new (WeakMap || Map)()
-providerMap.h = []
-providerMap.u = []
-providerMap.d = new (WeakMap || Map)()
-
-function createContext (value = {}) {
+const createContext = (value = {}) => {
   const stack = providerMap.s || 0
   // increase stack once provider is consumed
   providerMap.s = stack + 1
@@ -191,11 +179,10 @@ const setNode = (node, context) => {
 
 // HORRAY!! pass the context through pocus
 // so our function can use all hooks features
-function createElement ({ elementName, attributes }) {
+const createElement = ({ elementName, attributes }) => {
   // If keyed attributes exist unbind the elementName and map it to the key.
   // This should address function hooks thats go through Array mapping or
   // use elsewhere** (not tested yet for reusable hooks)
-
   const context = getContex(elementName)
 
   let node = null
@@ -223,7 +210,7 @@ function createElement ({ elementName, attributes }) {
   return node
 }
 
-function walk (node) {
+const walk = node => {
   const { elementName, children } = node
   if (typeof elementName === 'function') {
     return createElement(node)
