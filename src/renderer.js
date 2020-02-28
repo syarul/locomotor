@@ -56,6 +56,7 @@ function createEl (vtree, fragment) {
     if (Array.isArray(vtree)) {
       Array.from(vtree, vnode => createEl(vnode, fragment))
     } else {
+      if (!elementName) return fragment
       // handle fragment
       if (elementName === 'Locomotor.Fragment') {
         Array.from(children, child => createEl(child, fragment))
