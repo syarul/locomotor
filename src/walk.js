@@ -14,7 +14,7 @@ const lifeCycles = new (WeakMap || Map)()
 lifeCycles.stack = new (WeakMap || Map)()
 lifeCycles.base = []
 lifeCycles.fn = new (WeakMap || Map)()
-lifeCycles.parent = new (WeakMap || Map)()
+lifeCycles.ef = new (WeakMap || Map)()
 
 // simple compare for objects
 const isEqual = (o, s) => JSON.stringify(o) === JSON.stringify(s)
@@ -58,7 +58,7 @@ onStateChanged(context => {
   const ctx = lifeCycles.fn.get(context)
 
   // run side effects
-  cleanup(ctx)
+  // cleanup(ctx)
   flag(context, ctx)
 
   const node = pocus([ctx.p], context)
@@ -80,22 +80,36 @@ onStateChanged(context => {
 
 // effect interceptor
 const onEffect = cb =>
-  on(useLayoutEffect, (data, differEffect) => {
+  on(useLayoutEffect, (data, differEffect, posVal) => {
     const [context] = dataMap.get(data.context)
-    differEffect().then(effect => {
-      if (effect && typeof effect === 'function') {
-        cb(effect, context)
-      }
-    })
+
+    const preVal = lifeCycles.ef.get(context)
+    lifeCycles.ef.set(context, posVal)
+    const ctx = lifeCycles.fn.get(context)
+    if(!ctx) return
+    console.log(ctx)
+    const effects = ctx.e || []
+    console.log(preVal !== posVal)
+    if (!effects.length || preVal !== posVal) {
+      console.log(1)
+      cleanup(ctx)
+      differEffect().then(effect => {
+        if (effect && typeof effect === 'function') {
+          cb(effect, context)
+        }
+      })
+    }
   })
 
 onEffect((effect, context) => {
   const ctx = lifeCycles.fn.get(context) || {}
   const { e = [] } = ctx || {}
-  lifeCycles.fn.set(context, {
+  const eff = {
     ...ctx,
     e: e.concat(effect)
-  })
+  }
+  console.log(eff)
+  lifeCycles.fn.set(context, eff)
 })
 
 const lifeCyclesRunReset = () => {

@@ -50,13 +50,17 @@ function parseAttr (el, attr, value) {
 function createEl (vtree, fragment) {
   fragment = fragment || document.createDocumentFragment()
   if (vtree === null) return fragment
-  const { elementName, attributes, children } = vtree
+  const { elementName, attributes, children, context } = vtree
   let node = null
   if (typeof vtree === 'object') {
     if (Array.isArray(vtree)) {
       Array.from(vtree, vnode => createEl(vnode, fragment))
     } else {
-      if (!elementName) return fragment
+      // if (!elementName) return fragment
+      if(context) {
+        // handle element with context, we need to attach listener
+        // on dismount to clean all side effects - tba
+      }
       // handle fragment
       if (elementName === 'Locomotor.Fragment') {
         Array.from(children, child => createEl(child, fragment))
