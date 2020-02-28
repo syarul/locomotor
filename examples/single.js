@@ -20,4 +20,12 @@ function App (props) {
   )
 }
 
-export default App
+function Container (props) {
+  return (
+    <container>
+      <App {...props} />
+    </container>
+  )
+}
+
+export default Container

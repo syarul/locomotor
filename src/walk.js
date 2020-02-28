@@ -14,46 +14,45 @@ const lifeCycles = new (WeakMap || Map)()
 lifeCycles.stack = new (WeakMap || Map)()
 lifeCycles.base = []
 lifeCycles.fn = new (WeakMap || Map)()
-lifeCycles.parent = new (WeakMap || Map)()
-
-// simple compare for objects
-// const isEqual = (o, s) => JSON.stringify(o) === JSON.stringify(s)
 
 const cleanup = ({ e = [] }) => Array.from(e, run => run())
 
-// flag context dirty
-const flag = (context, ctx) => {
-  lifeCycles.fn.set(context, {
-    ...ctx,
-    s: false
-  })
-  const parentContext = parentMap.get(context)
-  const pCtx = lifeCycles.fn.get(parentContext)
-  if (parentContext && pCtx) {
-    flag(parentContext && pCtx)
+const updateVtree = (node, context, newNode) => {
+  if (node.context === context) {
+    for (const attr in node) {
+      node[attr] = newNode[attr]
+    }
+    node.context = context
+  } else {
+    if (node.children && node.children.length) {
+      Array.from(node.children, child => updateVtree(child, context, newNode))
+    }
   }
+  return node
 }
 
 onStateChanged(context => {
   const [rootBaseContext] = lifeCycles.base
   const [rootContext] = lifeCycles.get(rootBaseContext)
-  const ctx = lifeCycles.fn.get(context)
-  // run side effects
-  cleanup(ctx)
-  flag(context, ctx)
+  const { attributes, e } = lifeCycles.fn.get(context)
+  // console.log(lifeCycles.fn.get(context))
+  // cleanup side effects
+  cleanup({ e })
 
-  // get root props
-  const { p } = lifeCycles.fn.get(rootContext)
-  // generate an efficient new vtree
-  const vtree = pocus([p], rootContext)
+  // new node of current context
+  const node = pocus([attributes], context)
+
+  const vtree = lifeCycles.fn.get(rootContext)
+  const newVtree = updateVtree(vtree.node, context, node)
   // emit changes to render so patching can be done
-  vtreeRender(vtree)
+  vtreeRender(newVtree)
 })
 
 // effect interceptor
 const onEffect = cb =>
   on(useEffect, (data, differEffect) => {
     const [context] = dataMap.get(data.context)
+    console.log('aw')
     differEffect().then(effect => {
       if (effect && typeof effect === 'function') {
         cb(effect, context)
@@ -64,6 +63,7 @@ const onEffect = cb =>
 onEffect((effect, context) => {
   const ctx = lifeCycles.fn.get(context) || {}
   const { e } = ctx || []
+  console.log(e, effect)
   lifeCycles.fn.set(context, {
     ...ctx,
     e: e.concat(effect)
@@ -139,50 +139,30 @@ const useContext = hookus((data, context) => {
   return state
 })
 
-const parentMap = new (WeakMap || Map)()
-const cycleNodes = []
-
-function connectVtree (context) {
-  cycleNodes.push(context)
-  if (cycleNodes.length === 2) {
-    parentMap.set(context, cycleNodes[0])
-    cycleNodes.shift()
+const patch = (node, context) => {
+  if (node.elementName.match(/Locomotor.Provider./)) {
+    const [stack] = node.elementName.match(/([^Locomotor.Provider.])(.*)/g)
+    updateProvider(stack, node.attributes)
   }
+  node.context = context
 }
+
 // HORRAY!! pass the context through pocus
 // so our function can use all hooks features
 function createElement ({ elementName, attributes }) {
   // If keyed attributes exist unbind the elementName and map it to the key.
   // This should address function hooks thats go through Array mapping or
-  // use elsewhere** (not tested yet for reusable hooks)
-
   const context = getContex(elementName)
 
-  connectVtree(context)
-
-  let node = null
-
-  // const { s, n, p } = lifeCycles.fn.get(context) || {}
-
-  // return memoize node if status is pristine and props unchanged
-  // need to flag if parent node is pristine - tba
-  // if (s && isEqual(p, attributes)) {
-  // node = n
-  // } else {
-  node = pocus([attributes], context)
-  // }
-
-  if (node.elementName.match(/Locomotor.Provider./)) {
-    const [stack] = node.elementName.match(/([^Locomotor.Provider.])(.*)/g)
-    updateProvider(stack, node.attributes)
+  const node = pocus([attributes], context)
+  
+  if(node instanceof Promise) {
+    node.then(n => patch(n, context))
+  } else {
+    patch(node, context)
   }
 
-  // map the status/attributes where we will be able to retrive on subsequent runs
-  lifeCycles.fn.set(context, {
-    s: true,
-    n: node,
-    p: attributes
-  })
+  lifeCycles.fn.set(context, { node, attributes, context })
 
   return node
 }
