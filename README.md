@@ -2,12 +2,12 @@
 
 [![npm package](https://img.shields.io/badge/npm-0.1.8-blue.svg)](https://www.npmjs.com/package/locomotor) [![browser build](https://img.shields.io/badge/unpkg-0.1.8-ff69b4.svg)](https://unpkg.com/locomotor@0.1.8/locomotor-min.js)
 
-A react hook without lingo
+A React like hook without lingo
 
 > Experimental stage
 
 ### What's this
-Basically a strip version of react while using function hooks through
+Basically a view library which using function hooks through
 - useReducer
 - useState
 - useEffect
@@ -15,17 +15,17 @@ Basically a strip version of react while using function hooks through
 
 Which powered by michael-klein's [hookuspocus](https://github.com/michael-klein/hookuspocus)
 
-Added features
+Some added features includes:-
 - createContext
 - useContext
 
 ### What's the different
 
 - Internally it has ```React.memo``` immitation without using one and you don't need to use ```useCallback``` all over the place to handle efficient rendering. Function hooks are only called when state/props changed (*may need to add force render soon*).
-- Reusable function hooks.
+- Reusable function hooks, you can import as many time elsewhere, and the library will isolate each hooks.
 - Do not need ```key``` property when handling list/array mapping.
-- You may not need to ```import``` pragma on every js/jsx that need transpiling.
-- It only around 4kb gzip.
+- May not need to ```import``` pragma on every js/jsx that need transpiling.
+- It's only around 4kb gzip.
 
 Some concern includes:-
 - Event delegation is a bit wonky now, the patching simply replace the old node if it has eventListener attached.
