@@ -3060,10 +3060,9 @@ homedir-polyfill@^1.0.1:
   dependencies:
     parse-passwd "^1.0.0"
 
-hookuspocus@^1.1.4:
+"hookuspocus@https://github.com/syarul/hookuspocus":
   version "1.1.4"
-  resolved "https://registry.yarnpkg.com/hookuspocus/-/hookuspocus-1.1.4.tgz#7cfd464874fe278528bcf15b3d7ec88deca18814"
-  integrity sha512-9CMMO2G7oyN0gfNRTmrZwMIePj6KI3AT4NCbslU1KGEk3lBSIAR+lobkrglB9ZZTxR4+TuIL6Q9Qn/FtUbhLMA==
+  resolved "https://github.com/syarul/hookuspocus#d77f0b4dac894d1c945c02f9b837320ee8ac39bb"
 
 hosted-git-info@^2.1.4:
   version "2.8.5"
