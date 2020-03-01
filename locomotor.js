@@ -1,4 +1,4 @@
-import walk from './src/walk'
+import { walk } from './src/walk'
 
 /**
   * Pick up the jsx element with caleb's transform-jsx

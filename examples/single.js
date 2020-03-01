@@ -1,28 +1,44 @@
-import { useState } from 'locomotor'
-import { useEffect } from 'hookuspocus/src/use_effect'
+import { useState, useEffect } from 'locomotor'
 
 let i = 0
 
 function App (props) {
   const { todo } = props
-  const [foobar, setFoobar] = useState('foo')
+  const [foo, setFoo] = useState(0)
+  const [bar, setBar] = useState('bb')
+
   i++
-  console.log(`${todo} ${i} times! state is ${foobar}`)
-  const click = e => {
-    setFoobar(foobar === 'foo' ? 'bar' : 'foo')
+  console.log(`${todo} ${i} times!`)
+
+  const clickFoo = e => {
+    setFoo(foo === 1 ? 0 : 1)
+  }
+
+  const clickBar = e => {
+    setBar(bar === 'bb' ? 'rr' : 'bb')
   }
 
   useEffect(() => {
-    console.log(`${foobar} called !!!`)
+    console.log('foo called !!!')
     return () => {
-      console.log('out')
+      console.log('out foo')
     }
-  }, [foobar])
+  }, [foo])
+
+  useEffect(() => {
+    console.log('bar called !!!')
+    return () => {
+      console.log('out bar')
+    }
+  }, [bar])
 
   return (
     <div>
-      <button onClick={click}>
-        {todo}: {foobar}
+      <button onClick={clickFoo}>
+        {todo}: {foo}
+      </button>
+      <button onClick={clickBar}>
+        {todo}: {bar}
       </button>
     </div>
   )

@@ -24,6 +24,7 @@ function App (props) {
       }, 1000)
 
       return () => {
+        console.log('clear interval')
         clearInterval(intv)
       }
     }

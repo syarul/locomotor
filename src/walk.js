@@ -1,35 +1,23 @@
 import { vtreeRender } from './renderer'
-import { hookus, pocus, dataMap } from 'hookuspocus/src/core'
-import { on, onStateChanged } from 'hookuspocus/src/on'
-import { useLayoutEffect } from 'hookuspocus/src/use_layout_effect'
-import { useReducer } from 'hookuspocus/src/use_reducer'
+import { providerMap, setNode } from './provider'
+import { pocus } from 'hookuspocus/src/core'
+import { onStateChanged } from 'hookuspocus/src/on'
 
-// memo store, this basically to imitate React.memo
-// without using useCallback all over the place to
-// handle efficient rendering, rather that we store
-// the current state of of rendering and flag the
-// context which is dirty on subsequent lifeCycle
-
+// lifeCycles store
 const lifeCycles = new (WeakMap || Map)()
 lifeCycles.stack = new (WeakMap || Map)()
 lifeCycles.base = []
 lifeCycles.fn = new (WeakMap || Map)()
-lifeCycles.ef = new (WeakMap || Map)()
-
-const providerMap = new (WeakMap || Map)()
-providerMap.h = []
-providerMap.u = []
-providerMap.d = new (WeakMap || Map)()
 
 // simple compare for objects
 const isEqual = (o, s) => JSON.stringify(o) === JSON.stringify(s)
 
-const cleanup = context => {
-  const { e } = context
-  Array.from(e || [], run => run())
-}
+const consume = c => c()
 
 const updateVtree = (node, context, newNode) => {
+  if (node instanceof Promise) {
+    node.then(n => updateVtree(n, context, newNode))
+  }
   if (node.context === context) {
     for (const attr in node) {
       node[attr] = newNode[attr]
@@ -59,14 +47,40 @@ onStateChanged(context => {
     s: false
   })
 
-  const node = pocus([ctx.p], context)
+  const v = []
+
+  let node = pocus([ctx.p], context)
+
+  if (node instanceof Promise) {
+    v.push(node)
+    node.then(n => {
+      node = n
+    })
+  }
 
   const vtree = lifeCycles.fn.get(rootContext)
 
+  if (vtree.n instanceof Promise) {
+    v.push(vtree.n)
+    vtree.n.then(n => {
+      vtree.n = n
+    })
+  }
+
+  if (v.length) {
+    Promise.all(v).then(() => {
+      setNode(node, context)
+      render(vtree.n, context, node)
+    })
+  } else {
+    setNode(node, context)
+    render(vtree.n, context, node)
+  }
+
   // emit changes to render so patching can be done
-  vtree.n instanceof Promise
-    ? vtree.n.then(n => render(n, context, node))
-    : render(vtree.n, context, node)
+  // vtree.n instanceof Promise
+  //   ? vtree.n.then(n => render(n, context, node))
+  //   : render(vtree.n, context, node)
 
   // // get root props
   // const { p } = lifeCycles.fn.get(rootContext)
@@ -76,46 +90,18 @@ onStateChanged(context => {
   // vtreeRender(vtree)
 })
 
-// effect interceptor
-const onEffect = cb =>
-  on(useLayoutEffect, (data, differEffect, posVal) => {
-    const [context] = dataMap.get(data.context)
-
-    const preVal = lifeCycles.ef.get(context)
-    lifeCycles.ef.set(context, posVal)
-    const ctx = lifeCycles.fn.get(context)
-    if (!ctx) return
-    if ((ctx && !(ctx.e || []).length) || !isEqual(preVal, posVal)) {
-      // cleanup side effects
-      cleanup(ctx)
-      differEffect().then(effect => {
-        if (effect && typeof effect === 'function') {
-          cb(effect, context)
-        }
-      })
-    }
-  })
-
-onEffect((effect, context) => {
-  const ctx = lifeCycles.fn.get(context) || {}
-  const { e = [] } = ctx || {}
-  lifeCycles.fn.set(context, {
-    ...ctx,
-    e: e.concat(effect)
-  })
-})
-
-const lifeCyclesRunReset = () => {
+export const lifeCyclesRunReset = lifecycle => {
   // reset stacks once render done
   Array.from(lifeCycles.base, context =>
     lifeCycles.stack.set(context, 0)
   )
+  lifeCycles.stage = lifecycle
   // reset provider stack
   providerMap.s = 0
   // consume providers
-  Array.from(providerMap.u, run => run())
+  Array.from(providerMap.c, consume)
   // reset providers consumers
-  providerMap.u = []
+  providerMap.c = []
 }
 
 // generate reusable functions hooks, key is not
@@ -131,58 +117,10 @@ const getContex = fn => {
   return cStack
 }
 
-const updateProvider = (stack, attributes) => {
-  const value = providerMap.get(providerMap.h[stack]) || {}
-  let v = { ...value }
-  for (const attr in attributes) {
-    if (typeof attributes[attr] === 'object') {
-      v = { ...v, ...attributes[attr] }
-    } else {
-      v[attr] = attributes[attr]
-    }
-  }
-  const provider = providerMap.d.get(providerMap.h[stack])
-  // register provider, consume at the next cycle
-  providerMap.u.push(provider.bind(null, v))
-}
-
-const createContext = (value = {}) => {
-  const stack = providerMap.s || 0
-  // increase stack once provider is consumed
-  providerMap.s = stack + 1
-  const context = {
-    Provider: `Locomotor.Provider.${stack}`
-  }
-  providerMap.set(context, value)
-  providerMap.h.push(context)
-  return context
-}
-
-const useContext = hookus((data, context) => {
-  data.s = data.s !== undefined ? data.s : (providerMap.get(context) || {})
-  const cb = (_, action) => {
-    data.s = action
-    return data.s
-  }
-  const [state, dispatch] = useReducer(cb, data.s)
-  providerMap.d.set(context, action => dispatch(action))
-  return state
-})
-
-const setNode = (node, context) => {
-  node.context = context
-  if (node.elementName.match(/Locomotor.Provider./)) {
-    const [stack] = node.elementName.match(/([^Locomotor.Provider.])(.*)/g)
-    updateProvider(stack, node.attributes)
-  }
-}
-
 // HORRAY!! pass the context through pocus
 // so our function can use all hooks features
 const createElement = ({ elementName, attributes }) => {
-  // If keyed attributes exist unbind the elementName and map it to the key.
-  // This should address function hooks thats go through Array mapping or
-  // use elsewhere** (not tested yet for reusable hooks)
+
   const context = getContex(elementName)
 
   let node = null
@@ -210,7 +148,7 @@ const createElement = ({ elementName, attributes }) => {
   return node
 }
 
-const walk = node => {
+export const walk = node => {
   const { elementName, children } = node
   if (typeof elementName === 'function') {
     return createElement(node)
@@ -222,12 +160,4 @@ const walk = node => {
     }
   }
   return node
-}
-
-export {
-  walk as default,
-  lifeCyclesRunReset,
-  createContext,
-  useContext,
-  providerMap
 }

@@ -47,9 +47,15 @@ function parseAttr (el, attr, value) {
   }
 }
 
+let promises = []
+
 function createEl (vtree, fragment) {
   fragment = fragment || document.createDocumentFragment()
   if (vtree === null) return fragment
+  if (vtree instanceof Promise) {
+    promises.push(vtree)
+    return vtree.then(v => createEl(v, fragment))
+  }
   const { elementName, attributes, children, context } = vtree
   let node = null
   if (typeof vtree === 'object') {
@@ -84,22 +90,25 @@ function createEl (vtree, fragment) {
   return fragment
 }
 
-function handler (vtree, mount, transform, handle) {
-  vtree instanceof Promise
-    ? vtree.then(v => handle(mount, transform(v)))
-    : handle(mount, transform(vtree))
-  return mount
+function handler (mount, transform, event, handle) {
+  if (promises.length) {
+    Promise.all(promises).then(() => {
+      handle(mount, transform)
+      this.emit(event)
+      promises = []
+    })
+  } else {
+    handle(mount, transform)
+    this.emit(event)
+  }
 }
 
 class Renderer {
-  render (...args) {
-    this.r = handler(
-      ...args,
-      createEl,
-      (rootNode, vnode) => {
-        rootNode.appendChild(vnode)
-        this.emit('init')
-      }
+  render (vtree, rootNode) {
+    this.r = rootNode
+    vtree = createEl(vtree)
+    handler.call(this, rootNode, vtree, 'init', (el, node) =>
+      el.appendChild(node)
     )
   }
 
@@ -107,19 +116,15 @@ class Renderer {
     return new Promise(resolve => resolve(this.r))
   }
 
-  emit () {
-    this.deffer().then(lifeCyclesRunReset)
+  emit (lifecycle) {
+    this.deffer()
+      .then(lifeCyclesRunReset.bind(null, lifecycle))
   }
 
   on (vtree) {
-    handler(
-      vtree,
-      this.r,
-      createEl,
-      (rootNode, vnode) => {
-        patch(rootNode, vnode)
-        this.emit('update')
-      }
+    vtree = createEl(vtree)
+    handler.call(this, this.r, vtree, 'update', (el, node) =>
+      patch(el, node)
     )
   }
 }
