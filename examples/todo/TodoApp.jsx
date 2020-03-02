@@ -7,7 +7,7 @@ function TodoApp() {
   const [state, dispatch] = useReducer(reducer, initialState)
   return (
     <Fragment>
-      <AddTodo add={text => dispatch({ type: 'add', text: text })} />
+      <AddTodo add={text => dispatch({ type: 'add', text })} />
       {
         state.todos.map(t => (
           <Todo

@@ -26,8 +26,12 @@ function classes (el, attr, value) {
 }
 
 const nodeMap = new (WeakMap || Map)()
+nodeMap.i = new (WeakMap || Map)()
 
 function evt (el, attr, value) {
+  attr = attr.replace(/^on/, '').toLowerCase()
+  // set change as keyup
+  attr = (attr === 'change' && 'keyup') || attr
   el.addEventListener(attr.replace(/^on/, '').toLowerCase(), value, false)
   // on subsequent run we patch the node through WeakMap
   nodeMap.set(el, true)
@@ -77,6 +81,12 @@ function createEl (vtree, fragment) {
         })
       } else {
         node = document.createElement(elementName)
+        // catch focus input
+        if (node.nodeName === 'INPUT'){
+          node.addEventListener('focus', () =>
+            nodeMap.i.set(node, true)
+          , false)
+        }
         Array.from(Object.keys(attributes), attr => parseAttr(node, attr, attributes[attr]))
       }
     }
@@ -90,15 +100,15 @@ function createEl (vtree, fragment) {
   return fragment
 }
 
-function handler (mount, transform, event, handle) {
+function handler (transform, event, handle) {
   if (promises.length) {
     Promise.all(promises).then(() => {
-      handle(mount, transform)
+      handle(transform)
       this.emit(event)
       promises = []
     })
   } else {
-    handle(mount, transform)
+    handle(transform)
     this.emit(event)
   }
 }
@@ -106,10 +116,19 @@ function handler (mount, transform, event, handle) {
 class Renderer {
   render (vtree, rootNode) {
     this.r = rootNode
-    vtree = createEl(vtree)
-    handler.call(this, rootNode, vtree, 'init', (el, node) =>
-      el.appendChild(node)
-    )
+    if (vtree instanceof Promise) {
+      vtree.then(v => {
+        v = createEl(v)
+        handler.call(this, v, 'init', node =>
+          rootNode.appendChild(node)
+        )
+      })
+    } else {
+      vtree = createEl(vtree)
+      handler.call(this, vtree, 'init', node =>
+        rootNode.appendChild(node)
+      )
+    }
   }
 
   deffer () {
@@ -123,8 +142,8 @@ class Renderer {
 
   on (vtree) {
     vtree = createEl(vtree)
-    handler.call(this, this.r, vtree, 'update', (el, node) =>
-      patch(el, node)
+    handler.call(this, vtree, 'update', node =>
+      patch(this.r, node)
     )
   }
 }
