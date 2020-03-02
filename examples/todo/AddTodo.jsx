@@ -5,21 +5,22 @@ function AddTodo({add}) {
   useEffect(() => {
     console.log(text)
   }, [text])
+  
   const onChange = e => {
     // console.log(e.target.value)
     setText(e.target.value)
   }
 
-  const onClick = () => { 
-    console.log(text)
+  const onClick = () => {     
+    // console.log(text)
     add(text)
-    setText('') 
+    setText('')
   }
 
   return (
-    <div className='AddTodo'>
-      <input value={text} onChange={onChange} className='AddTodoInput' />
-      <button className='AddTodoButton' onClick={onClick}>Add</button>
+    <div>
+      <input value={text} onChange={onChange}/>
+      <button onClick={onClick}>Add {text}</button>
     </div>
   )
 }

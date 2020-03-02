@@ -51,14 +51,11 @@ function parseAttr (el, attr, value) {
   }
 }
 
-let promises = []
-
-function createEl (vtree, fragment) {
+const createEl = async (vtree, fragment) => {
   fragment = fragment || document.createDocumentFragment()
   if (vtree === null) return fragment
   if (vtree instanceof Promise) {
-    promises.push(vtree)
-    return vtree.then(v => createEl(v, fragment))
+    vtree = await vtree
   }
   const { elementName, attributes, children, context } = vtree
   let node = null
@@ -73,12 +70,10 @@ function createEl (vtree, fragment) {
       }
       // handle fragment
       if (elementName === 'Locomotor.Fragment') {
-        Array.from(children, child => createEl(child, fragment))
+        await Promise.all(Array.from(children, async child => await createEl(child, fragment)))
       // handle provider
       } else if (elementName.match(/Locomotor.Provider./)) {
-        Array.from(children, child => {
-          createEl(child, fragment)
-        })
+        await Promise.all(Array.from(children, async  child => await createEl(child, fragment)))
       } else {
         node = document.createElement(elementName)
         // catch focus input
@@ -94,41 +89,53 @@ function createEl (vtree, fragment) {
     node = document.createTextNode(vtree)
   }
   if (children && children.length) {
-    Array.from(children, child => createEl(child, node))
+    await Promise.all(Array.from(children, async child => await createEl(child, node)))
   }
   node && fragment.appendChild(node)
   return fragment
 }
 
-function handler (transform, event, handle) {
-  if (promises.length) {
-    Promise.all(promises).then(() => {
-      handle(transform)
-      this.emit(event)
-      promises = []
-    })
+const resolveVtree = async vtree => {
+  if (vtree instanceof Promise) {
+    vtree = await vtree
+  } 
+  let { elementName, children } = vtree
+  if(Array.isArray(vtree)) {
+    vtree = await Promise.all(vtree.map(async v => await resolveVtree(v)))
   } else {
-    handle(transform)
-    this.emit(event)
+    if (elementName instanceof Promise) {
+      elementName = await elementName
+    }
+    
+    children = await Promise.all(
+      (children || []).map(async child => {
+        if (child instanceof Promise) {
+          child = await child
+        }
+        child = await resolveVtree(child)
+        return child
+      })
+    )
+  }
+
+  return {
+    ...vtree,
+    elementName,
+    children
   }
 }
 
+
 class Renderer {
-  render (vtree, rootNode) {
+  async render (vtree, rootNode) {
+    await resolveVtree(vtree)
     this.r = rootNode
     if (vtree instanceof Promise) {
-      vtree.then(v => {
-        v = createEl(v)
-        handler.call(this, v, 'init', node =>
-          rootNode.appendChild(node)
-        )
-      })
-    } else {
-      vtree = createEl(vtree)
-      handler.call(this, vtree, 'init', node =>
-        rootNode.appendChild(node)
-      )
-    }
+      vtree = await vtree
+    } 
+    const node = await createEl(vtree)
+    rootNode.appendChild(node)
+    this.emit('init')
   }
 
   deffer () {
@@ -136,15 +143,15 @@ class Renderer {
   }
 
   emit (lifecycle) {
-    this.deffer()
-      .then(lifeCyclesRunReset.bind(null, lifecycle))
+    this.deffer().then(() =>
+      lifeCyclesRunReset(lifecycle)
+    )
   }
 
-  on (vtree) {
-    vtree = createEl(vtree)
-    handler.call(this, vtree, 'update', node =>
-      patch(this.r, node)
-    )
+  async on (vtree) {
+    const node = await createEl(vtree)
+    patch(this.r, node)
+    this.emit('update')
   }
 }
 

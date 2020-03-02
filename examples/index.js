@@ -1,9 +1,13 @@
 import { locoDOM } from 'locomotor'
-import AddTodo from './todo/AddTodo.jsx'
+import TodoApp from './todo/TodoApp'
 
-const props = { add: text => console.log(text) }
+const props = { 
+  add: text => {
+    console.log(text)
+  } 
+}
 
 locoDOM.render(
-  <AddTodo {...props} />,
+  <TodoApp />,
   document.getElementById('app')
 )

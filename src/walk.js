@@ -1,3 +1,5 @@
+import 'core-js/stable'
+import 'regenerator-runtime/runtime'
 import { vtreeRender } from './renderer'
 import { providerMap, setNode } from './provider'
 import { pocus } from 'hookuspocus/src/core'
@@ -36,7 +38,7 @@ const updateVtree = (node, context, newNode) => {
 const render = (...args) =>
   vtreeRender(updateVtree.apply(null, args))
 
-onStateChanged(context => {
+onStateChanged(async context => {
   const [rootBaseContext] = lifeCycles.base
   const [rootContext] = lifeCycles.get(rootBaseContext)
   const ctx = lifeCycles.fn.get(context)
@@ -47,35 +49,20 @@ onStateChanged(context => {
     s: false
   })
 
-  const v = []
-
   let node = pocus([ctx.p], context)
 
   if (node instanceof Promise) {
-    v.push(node)
-    node.then(n => {
-      node = n
-    })
+    node = await node
   }
 
   const vtree = lifeCycles.fn.get(rootContext)
 
   if (vtree.n instanceof Promise) {
-    v.push(vtree.n)
-    vtree.n.then(n => {
-      vtree.n = n
-    })
+    vtree.n = await vtree.n
   }
 
-  if (v.length) {
-    Promise.all(v).then(() => {
-      setNode(node, context)
-      render(vtree.n, context, node)
-    })
-  } else {
-    setNode(node, context)
-    render(vtree.n, context, node)
-  }
+  setNode(node, context)
+  render(vtree.n, context, node)
 
   // emit changes to render so patching can be done
   // vtree.n instanceof Promise
@@ -119,7 +106,7 @@ const getContex = fn => {
 
 // HORRAY!! pass the context through pocus
 // so our function can use all hooks features
-const createElement = ({ elementName, attributes }) => {
+const createElement = async ({ elementName, attributes }) => {
 
   const context = getContex(elementName)
 
@@ -134,9 +121,10 @@ const createElement = ({ elementName, attributes }) => {
     node = pocus([attributes], context)
   }
 
-  node instanceof Promise
-    ? node.then(n => setNode(n, context))
-    : setNode(node, context)
+  if(node instanceof Promise) {
+    node = await node
+  }
+  setNode(node, context)
 
   // map the status/attributes where we will be able to retrive on subsequent runs
   lifeCycles.fn.set(context, {
@@ -148,7 +136,10 @@ const createElement = ({ elementName, attributes }) => {
   return node
 }
 
-export const walk = node => {
+export const walk = async node => {
+  if(node instanceof Promise) {
+    node = await node
+  }
   const { elementName, children } = node
   if (typeof elementName === 'function') {
     return createElement(node)
