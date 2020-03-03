@@ -29,7 +29,9 @@
   },
   "homepage": "https://github.com/syarul/locomotor#readme",
   "dependencies": {
-    "hookuspocus": "https://github.com/syarul/hookuspocus"
+    "core-js": "^3.6.4",
+    "hookuspocus": "https://github.com/syarul/hookuspocus",
+    "regenerator-runtime": "^0.13.3"
   },
   "devDependencies": {
     "@babel/core": "^7.8.4",

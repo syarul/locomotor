@@ -38,7 +38,7 @@ const updateVtree = (node, context, newNode) => {
 const render = (...args) =>
   vtreeRender(updateVtree.apply(null, args))
 
-onStateChanged(async context => {
+onStateChanged(context => {
   const [rootBaseContext] = lifeCycles.base
   const [rootContext] = lifeCycles.get(rootBaseContext)
   const ctx = lifeCycles.fn.get(context)
@@ -51,19 +51,36 @@ onStateChanged(async context => {
 
   let node = pocus([ctx.p], context)
 
+  const [promises, resolver] = [[], []]
+
   if (node instanceof Promise) {
-    node = await node
+    promises.push(node)
+    resolver.push(n => {
+      node = n
+    })
   }
 
   const vtree = lifeCycles.fn.get(rootContext)
 
   if (vtree.n instanceof Promise) {
-    vtree.n = await vtree.n
+    promises.push(vtree.n)
+    resolver.push(n => {
+      vtree.n = n
+    })
   }
 
-  setNode(node, context)
-  render(vtree.n, context, node)
+  const merge = () => {
+    setNode(node, context)
+    render(vtree.n, context, node)
+  }
 
+  if (promises.length) {
+    Promise.all(promises).then(r =>
+      r.map((r, i) => resolver[i](r))
+    ).then(merge)
+  } else {
+    merge()
+  }
   // emit changes to render so patching can be done
   // vtree.n instanceof Promise
   //   ? vtree.n.then(n => render(n, context, node))
@@ -106,49 +123,41 @@ const getContex = fn => {
 
 // HORRAY!! pass the context through pocus
 // so our function can use all hooks features
-const createElement = async ({ elementName, attributes }) => {
-
+const createElement = ({ elementName, attributes }) => {
   const context = getContex(elementName)
-
   let node = null
-
   const { s, n, p } = lifeCycles.fn.get(context) || {}
-
   // return memoize node if status is pristine and props unchanged
   if (s && isEqual(p, attributes)) {
     node = n
   } else {
     node = pocus([attributes], context)
   }
-
-  if(node instanceof Promise) {
-    node = await node
-  }
-  setNode(node, context)
-
+  const setNodeWithContext = node => setNode(node, context)
+  node instanceof Promise ? node.then(setNodeWithContext) : setNodeWithContext(node)
   // map the status/attributes where we will be able to retrive on subsequent runs
   lifeCycles.fn.set(context, {
     s: true,
     n: node,
     p: attributes
   })
-
   return node
 }
 
-export const walk = async node => {
-  if(node instanceof Promise) {
-    node = await node
-  }
-  const { elementName, children } = node
-  if (typeof elementName === 'function') {
-    return createElement(node)
-  }
-  if (children && children.length) {
-    return {
-      ...node,
-      children: Array.from(children, walk)
+export const walk = node => {
+  if (node instanceof Promise) {
+    return node.then(walk)
+  } else {
+    const { elementName, children } = node
+    if (typeof elementName === 'function') {
+      return createElement(node)
     }
+    if (children && children.length) {
+      return {
+        ...node,
+        children: Array.from(children, walk)
+      }
+    }
+    return node
   }
-  return node
 }

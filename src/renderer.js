@@ -70,14 +70,14 @@ const createEl = async (vtree, fragment) => {
       }
       // handle fragment
       if (elementName === 'Locomotor.Fragment') {
-        await Promise.all(Array.from(children, async child => await createEl(child, fragment)))
+        await Promise.all(Array.from(children, async child => createEl(child, fragment)))
       // handle provider
       } else if (elementName.match(/Locomotor.Provider./)) {
-        await Promise.all(Array.from(children, async  child => await createEl(child, fragment)))
+        await Promise.all(Array.from(children, async child => createEl(child, fragment)))
       } else {
         node = document.createElement(elementName)
         // catch focus input
-        if (node.nodeName === 'INPUT'){
+        if (node.nodeName === 'INPUT') {
           node.addEventListener('focus', () =>
             nodeMap.i.set(node, true)
           , false)
@@ -89,7 +89,7 @@ const createEl = async (vtree, fragment) => {
     node = document.createTextNode(vtree)
   }
   if (children && children.length) {
-    await Promise.all(Array.from(children, async child => await createEl(child, node)))
+    await Promise.all(Array.from(children, async child => createEl(child, node)))
   }
   node && fragment.appendChild(node)
   return fragment
@@ -97,16 +97,16 @@ const createEl = async (vtree, fragment) => {
 
 const resolveVtree = async vtree => {
   if (vtree instanceof Promise) {
-    vtree = await vtree
+    return vtree.then(resolveVtree)
   } 
-  let { elementName, children } = vtree
-  if(Array.isArray(vtree)) {
-    vtree = await Promise.all(vtree.map(async v => await resolveVtree(v)))
+  if (Array.isArray(vtree)) {
+    return Promise.all(Array.from(vtree, resolveVtree))
   } else {
+    let { elementName, children } = vtree
     if (elementName instanceof Promise) {
       elementName = await elementName
     }
-    
+
     children = await Promise.all(
       (children || []).map(async child => {
         if (child instanceof Promise) {
@@ -116,23 +116,24 @@ const resolveVtree = async vtree => {
         return child
       })
     )
+    
+    return {
+      ...vtree,
+      elementName,
+      children
+    }
   }
 
-  return {
-    ...vtree,
-    elementName,
-    children
-  }
 }
-
 
 class Renderer {
   async render (vtree, rootNode) {
+    console.log(vtree)
     await resolveVtree(vtree)
     this.r = rootNode
     if (vtree instanceof Promise) {
       vtree = await vtree
-    } 
+    }
     const node = await createEl(vtree)
     rootNode.appendChild(node)
     this.emit('init')

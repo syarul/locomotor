@@ -67,12 +67,12 @@ function patch (oldNode, newNode) {
           diff(oldNode.firstChild, newNode.firstChild, oldNode)
         }
         // focus element if it last time was focused
-        if(nodeMap.i.get(oldNode)) {
+        if (nodeMap.i.get(oldNode)) {
           nodeMap.i.delete(oldNode)
           // set focus
           newNode.focus()
           // set cursor position
-          let val = newNode.value
+          const val = newNode.value
           newNode.value = ''
           newNode.value = val
         }
