@@ -15,8 +15,9 @@ const isEqual = (o, s) => JSON.stringify(o) === JSON.stringify(s)
 const consume = c => c()
 
 const updateVtree = (node, context, newNode) => {
+  const update = n => updateVtree(n, context, newNode)
   if (node instanceof Promise) {
-    node.then(n => updateVtree(n, context, newNode))
+    node.then(update)
   }
   if (node.context === context) {
     for (const attr in node) {
@@ -25,9 +26,9 @@ const updateVtree = (node, context, newNode) => {
     node.context = context
   } else {
     if (Array.isArray(node)) {
-      Array.from(node, n => updateVtree(n, context, newNode))
+      Array.from(node, update)
     } else if (node.children && node.children.length) {
-      Array.from(node.children, c => updateVtree(c, context, newNode))
+      Array.from(node.children, update)
     }
   }
   return node
