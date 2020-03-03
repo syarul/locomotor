@@ -3,18 +3,15 @@ import { useState, useEffect } from 'locomotor'
 function AddTodo({add}) {
   const [text, setText] = useState('')
   useEffect(() => {
-    console.log(text)
+    // console.log(text)
   }, [text])
   
-  const onChange = e => {
-    // console.log(e.target.value)
+  const onChange = e => 
     setText(e.target.value)
-  }
 
   const onClick = () => {     
-    // console.log(text)
     add(text)
-    setText('')
+    // setText('')
   }
 
   return (

@@ -1,3 +1,5 @@
+import 'regenerator-runtime/runtime'
+import co from 'co'
 import patch from './patch'
 import { lifeCyclesRunReset } from './walk'
 
@@ -51,12 +53,9 @@ function parseAttr (el, attr, value) {
   }
 }
 
-const createEl = async (vtree, fragment) => {
+const createEl = (vtree, fragment) => {
   fragment = fragment || document.createDocumentFragment()
   if (vtree === null) return fragment
-  if (vtree instanceof Promise) {
-    vtree = await vtree
-  }
   const { elementName, attributes, children, context } = vtree
   let node = null
   if (typeof vtree === 'object') {
@@ -70,10 +69,10 @@ const createEl = async (vtree, fragment) => {
       }
       // handle fragment
       if (elementName === 'Locomotor.Fragment') {
-        await Promise.all(Array.from(children, async child => createEl(child, fragment)))
+        Array.from(children, child => createEl(child, fragment))
       // handle provider
       } else if (elementName.match(/Locomotor.Provider./)) {
-        await Promise.all(Array.from(children, async child => createEl(child, fragment)))
+        Array.from(children, child => createEl(child, fragment))
       } else {
         node = document.createElement(elementName)
         // catch focus input
@@ -89,18 +88,19 @@ const createEl = async (vtree, fragment) => {
     node = document.createTextNode(vtree)
   }
   if (children && children.length) {
-    await Promise.all(Array.from(children, async child => createEl(child, node)))
+    Array.from(children, child => createEl(child, node))
   }
   node && fragment.appendChild(node)
   return fragment
 }
 
-const resolveVtree = async vtree => {
+/* const _resolveVtree = async vtree => {
   if (vtree instanceof Promise) {
     return vtree.then(resolveVtree)
-  } 
-  if (Array.isArray(vtree)) {
+  } else if (Array.isArray(vtree)) {
     return Promise.all(Array.from(vtree, resolveVtree))
+  } else if (typeof vtree !== 'object') {
+    return vtree
   } else {
     let { elementName, children } = vtree
     if (elementName instanceof Promise) {
@@ -116,27 +116,47 @@ const resolveVtree = async vtree => {
         return child
       })
     )
-    
     return {
       ...vtree,
       elementName,
       children
     }
   }
+} */
 
-}
+// resolve all promises in vtree object
+// using co since it's more compact compare to core-js
+const resolveVtree = vtree =>
+  co.wrap(function * () {
+    if (vtree instanceof Promise) {
+      vtree = yield Promise.resolve(vtree)
+      return yield resolveVtree(vtree)
+    } else if (Array.isArray(vtree)) {
+      return yield Array.from(vtree, resolveVtree)
+    } else if (typeof vtree !== 'object') {
+      return vtree
+    } else {
+      let { elementName, children } = vtree
+      if (elementName instanceof Promise) {
+        elementName = yield Promise.resolve(elementName)
+      }
+      children = yield Array.from(children || [], resolveVtree)
+      return {
+        ...vtree,
+        elementName,
+        children
+      }
+    }
+  })(true)
 
 class Renderer {
-  async render (vtree, rootNode) {
-    console.log(vtree)
-    await resolveVtree(vtree)
-    this.r = rootNode
-    if (vtree instanceof Promise) {
-      vtree = await vtree
-    }
-    const node = await createEl(vtree)
-    rootNode.appendChild(node)
-    this.emit('init')
+  render (vtree, rootNode) {
+    resolveVtree(vtree).then(vtree => {
+      this.r = rootNode
+      const node = createEl(vtree)
+      rootNode.appendChild(node)
+      this.emit('init')
+    })
   }
 
   deffer () {
@@ -149,10 +169,14 @@ class Renderer {
     )
   }
 
-  async on (vtree) {
-    const node = await createEl(vtree)
-    patch(this.r, node)
-    this.emit('update')
+  on (vtree) {
+    // console.log(vtree)
+    resolveVtree(vtree).then(vtree => {
+      const node = createEl(vtree)
+      console.log(this.r, node)
+      patch(this.r, node)
+      this.emit('update')
+    })
   }
 }
 

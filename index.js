@@ -1,8 +1,8 @@
-import { useReducer } from 'hookuspocus/src/use_reducer'
+// import { useReducer } from 'hookuspocus/src/use_reducer'
 import { useState } from 'hookuspocus/src/use_state'
 import { useEffect } from 'hookuspocus/src/use_effect'
 import { useLayoutEffect } from 'hookuspocus/src/use_layout_effect'
-import { createContext, useContext } from './src/provider'
+import { createContext, useContext, useHigherOrderReducer as useReducer } from './src/provider'
 import locoDOM from './src/renderer'
 import locomotor from './locomotor'
 

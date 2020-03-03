@@ -1,12 +1,10 @@
-import 'core-js/stable'
-import 'regenerator-runtime/runtime'
 import { vtreeRender } from './renderer'
 import { providerMap, setNode } from './provider'
-import { pocus } from 'hookuspocus/src/core'
+import { pocus, dataMap } from 'hookuspocus/src/core'
 import { onStateChanged } from 'hookuspocus/src/on'
 
 // lifeCycles store
-const lifeCycles = new (WeakMap || Map)()
+export const lifeCycles = new (WeakMap || Map)()
 lifeCycles.stack = new (WeakMap || Map)()
 lifeCycles.base = []
 lifeCycles.fn = new (WeakMap || Map)()
@@ -38,10 +36,13 @@ const updateVtree = (node, context, newNode) => {
 const render = (...args) =>
   vtreeRender(updateVtree.apply(null, args))
 
-onStateChanged(context => {
+export const contextUpdate = (context, f) => {
+  
   const [rootBaseContext] = lifeCycles.base
   const [rootContext] = lifeCycles.get(rootBaseContext)
   const ctx = lifeCycles.fn.get(context)
+
+  let node, vtree
 
   // flag context dirty, might be useful on some casses
   lifeCycles.fn.set(context, {
@@ -49,8 +50,8 @@ onStateChanged(context => {
     s: false
   })
 
-  let node = pocus([ctx.p], context)
-
+  node = pocus([ctx.p], context)
+ 
   const [promises, resolver] = [[], []]
 
   if (node instanceof Promise) {
@@ -60,7 +61,12 @@ onStateChanged(context => {
     })
   }
 
-  const vtree = lifeCycles.fn.get(rootContext)
+  // if target is rootContext skip all things
+  if (context === rootContext) {
+    return vtreeRender(node)
+  }
+
+  vtree = lifeCycles.fn.get(rootContext)
 
   if (vtree.n instanceof Promise) {
     promises.push(vtree.n)
@@ -92,7 +98,9 @@ onStateChanged(context => {
   // const vtree = pocus([p], rootContext)
   // // emit changes to render so patching can be done
   // vtreeRender(vtree)
-})
+}
+
+onStateChanged(contextUpdate)
 
 export const lifeCyclesRunReset = lifecycle => {
   // reset stacks once render done

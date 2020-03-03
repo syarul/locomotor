@@ -1,10 +1,27 @@
-import { L as Fragment, useReducer } from 'locomotor'
+import { L as Fragment, useReducer, useEffect } from 'locomotor'
 import { initialState, reducer } from './reducers'
 import Todo from './Todo.jsx'
 import AddTodo from './AddTodo.jsx'
 
 function TodoApp() {
+
+  const cb = (state, action) => {
+    const newCounter = state.counter + 1
+    const newTodo = {
+      id: newCounter,
+      text: action.text
+    }
+    return {
+      counter: newCounter,
+      todos: [...state.todos, newTodo]
+    }
+    // return state
+  }
+
   const [state, dispatch] = useReducer(reducer, initialState)
+  useEffect(() => {
+    console.log(state)
+  },[state])
   return (
     <Fragment>
       <AddTodo add={text => dispatch({ type: 'add', text })} />

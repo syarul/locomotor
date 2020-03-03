@@ -66,7 +66,7 @@ function patch (oldNode, newNode) {
           setAttr(oldNode, newNode)
           diff(oldNode.firstChild, newNode.firstChild, oldNode)
         }
-        // focus element if it last time was focused
+        // quick hack, focus element if it last time was focused
         if (nodeMap.i.get(oldNode)) {
           nodeMap.i.delete(oldNode)
           // set focus
@@ -140,7 +140,7 @@ function diff (oldNode, newNode, oldParentNode) {
 }
 
 function patcher (node, update) {
-  diff(node.firstChild, update.firstChild, update)
+  diff(node.firstChild, update.firstChild, node.parentNode)
 }
 
 export default patcher
