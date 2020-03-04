@@ -53,14 +53,19 @@ function parseAttr (el, attr, value) {
   }
 }
 
-const createEl = (vtree, fragment) => {
+const createEl = (vtree, fragment, key) => {
   fragment = fragment || document.createDocumentFragment()
   if (vtree === null) return fragment
   const { elementName, attributes, children, context } = vtree
+  if (key !== undefined) {
+    attributes.key = key
+  }
   let node = null
   if (typeof vtree === 'object') {
     if (Array.isArray(vtree)) {
-      Array.from(vtree, vnode => createEl(vnode, fragment))
+      // if it a list we automatically assign a key index.
+      // It's the reason why key property is not needed
+      Array.from(vtree, (vnode, key) => createEl(vnode, fragment, key))
     } else {
       // if (!elementName) return fragment
       if (context) {
@@ -93,36 +98,6 @@ const createEl = (vtree, fragment) => {
   node && fragment.appendChild(node)
   return fragment
 }
-
-/* const _resolveVtree = async vtree => {
-  if (vtree instanceof Promise) {
-    return vtree.then(resolveVtree)
-  } else if (Array.isArray(vtree)) {
-    return Promise.all(Array.from(vtree, resolveVtree))
-  } else if (typeof vtree !== 'object') {
-    return vtree
-  } else {
-    let { elementName, children } = vtree
-    if (elementName instanceof Promise) {
-      elementName = await elementName
-    }
-
-    children = await Promise.all(
-      (children || []).map(async child => {
-        if (child instanceof Promise) {
-          child = await child
-        }
-        child = await resolveVtree(child)
-        return child
-      })
-    )
-    return {
-      ...vtree,
-      elementName,
-      children
-    }
-  }
-} */
 
 // resolve all promises in vtree object
 // using co since it's more compact compare to core-js
@@ -170,10 +145,8 @@ class Renderer {
   }
 
   on (vtree) {
-    // console.log(vtree)
     resolveVtree(vtree).then(vtree => {
       const node = createEl(vtree)
-      console.log(this.r, node)
       patch(this.r, node)
       this.emit('update')
     })

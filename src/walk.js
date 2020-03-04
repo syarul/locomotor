@@ -1,6 +1,6 @@
 import { vtreeRender } from './renderer'
 import { providerMap, setNode } from './provider'
-import { pocus, dataMap } from 'hookuspocus/src/core'
+import { pocus } from 'hookuspocus/src/core'
 import { onStateChanged } from 'hookuspocus/src/on'
 
 // lifeCycles store
@@ -37,13 +37,11 @@ const updateVtree = (node, context, newNode) => {
 const render = (...args) =>
   vtreeRender(updateVtree.apply(null, args))
 
-export const contextUpdate = (context, f) => {
-  
+onStateChanged(context => {
   const [rootBaseContext] = lifeCycles.base
   const [rootContext] = lifeCycles.get(rootBaseContext)
   const ctx = lifeCycles.fn.get(context)
-
-  let node, vtree
+  let node
 
   // flag context dirty, might be useful on some casses
   lifeCycles.fn.set(context, {
@@ -52,7 +50,12 @@ export const contextUpdate = (context, f) => {
   })
 
   node = pocus([ctx.p], context)
- 
+
+  lifeCycles.fn.set(context, {
+    ...ctx,
+    n: node
+  })
+
   const [promises, resolver] = [[], []]
 
   if (node instanceof Promise) {
@@ -67,7 +70,7 @@ export const contextUpdate = (context, f) => {
     return vtreeRender(node)
   }
 
-  vtree = lifeCycles.fn.get(rootContext)
+  const vtree = lifeCycles.fn.get(rootContext)
 
   if (vtree.n instanceof Promise) {
     promises.push(vtree.n)
@@ -99,9 +102,7 @@ export const contextUpdate = (context, f) => {
   // const vtree = pocus([p], rootContext)
   // // emit changes to render so patching can be done
   // vtreeRender(vtree)
-}
-
-onStateChanged(contextUpdate)
+})
 
 export const lifeCyclesRunReset = lifecycle => {
   // reset stacks once render done

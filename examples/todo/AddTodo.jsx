@@ -1,17 +1,13 @@
-import { useState, useEffect } from 'locomotor'
+import { useState } from 'locomotor'
 
 function AddTodo({add}) {
   const [text, setText] = useState('')
-  useEffect(() => {
-    // console.log(text)
-  }, [text])
-  
   const onChange = e => 
     setText(e.target.value)
 
   const onClick = () => {     
     add(text)
-    // setText('')
+    setText('')
   }
 
   return (
