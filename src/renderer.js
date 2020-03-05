@@ -1,6 +1,7 @@
 import 'regenerator-runtime/runtime'
 import co from 'co'
 import patch from './patch'
+import morph from './morph'
 import { lifeCyclesRunReset } from './walk'
 
 function camelCase (s, o) {
@@ -34,9 +35,14 @@ function evt (el, attr, value) {
   attr = attr.replace(/^on/, '').toLowerCase()
   // set change as keyup
   attr = (attr === 'change' && 'keyup') || attr
-  el.addEventListener(attr.replace(/^on/, '').toLowerCase(), value, false)
+
+  // initial event handler
+  el.addEventListener(attr, value, false)
   // on subsequent run we patch the node through WeakMap
-  nodeMap.set(el, true)
+  nodeMap.set(el, {
+    attr,
+    value
+  })
 }
 
 function parseAttr (el, attr, value) {
@@ -81,11 +87,11 @@ const createEl = (vtree, fragment, key) => {
       } else {
         node = document.createElement(elementName)
         // catch focus input
-        if (node.nodeName === 'INPUT') {
-          node.addEventListener('focus', () =>
-            nodeMap.i.set(node, true)
-          , false)
-        }
+        // if (node.nodeName === 'INPUT') {
+        //   node.addEventListener('focus', () =>
+        //     nodeMap.i.set(node, true)
+        //   , false)
+        // }
         Array.from(Object.keys(attributes), attr => parseAttr(node, attr, attributes[attr]))
       }
     }
@@ -147,7 +153,7 @@ class Renderer {
   on (vtree) {
     resolveVtree(vtree).then(vtree => {
       const node = createEl(vtree)
-      patch(this.r, node)
+      morph(this.r, node)
       this.emit('update')
     })
   }

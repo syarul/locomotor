@@ -1,5 +1,5 @@
 import { locoDOM } from 'locomotor'
-import TodoApp from './todo/TodoApp'
+import TodoApp from './todo/AddTodo'
 
 const props = {
   add: text => {

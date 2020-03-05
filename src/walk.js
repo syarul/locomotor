@@ -1,6 +1,6 @@
 import { vtreeRender } from './renderer'
 import { providerMap, setNode } from './provider'
-import { pocus } from 'hookuspocus/src/core'
+import { pocus, dataMap } from 'hookuspocus/src/core'
 import { onStateChanged } from 'hookuspocus/src/on'
 
 // lifeCycles store
@@ -42,7 +42,7 @@ onStateChanged(context => {
   const [rootContext] = lifeCycles.get(rootBaseContext)
   const ctx = lifeCycles.fn.get(context)
   let node
-
+  
   // flag context dirty, might be useful on some casses
   lifeCycles.fn.set(context, {
     ...ctx,
