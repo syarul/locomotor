@@ -1,6 +1,6 @@
 import 'regenerator-runtime/runtime'
 import co from 'co'
-import patch from './patch'
+import patch from './morp' //'./patch'
 import { lifeCyclesRunReset } from './walk'
 
 function camelCase (s, o) {
@@ -28,15 +28,19 @@ function classes (el, attr, value) {
 }
 
 const nodeMap = new (WeakMap || Map)()
-nodeMap.i = new (WeakMap || Map)()
+// nodeMap.i = new (WeakMap || Map)()
 
 function evt (el, attr, value) {
   attr = attr.replace(/^on/, '').toLowerCase()
   // set change as keyup
   attr = (attr === 'change' && 'keyup') || attr
-  el.addEventListener(attr.replace(/^on/, '').toLowerCase(), value, false)
+  el.addEventListener(attr, value, false)
   // on subsequent run we patch the node through WeakMap
-  nodeMap.set(el, true)
+  const ctx = nodeMap.get(el) || {}
+  nodeMap.set(el, {
+    ...ctx,
+    [attr]: value
+  })
 }
 
 function parseAttr (el, attr, value) {
@@ -80,13 +84,17 @@ const createEl = (vtree, fragment, key) => {
         Array.from(children, child => createEl(child, fragment))
       } else {
         node = document.createElement(elementName)
-        // catch focus input
-        if (node.nodeName === 'INPUT') {
-          node.addEventListener('focus', () =>
-            nodeMap.i.set(node, true)
-          , false)
-        }
         Array.from(Object.keys(attributes), attr => parseAttr(node, attr, attributes[attr]))
+        // input focus ctcher
+        if (node.nodeName === 'INPUT'){
+          evt(node, 'onfocus', () => {
+            const ctx = nodeMap.get(node) || {}
+            nodeMap.set(node, {
+              ...ctx,
+              focus: true
+            })
+          })
+        }
       }
     }
   } else {

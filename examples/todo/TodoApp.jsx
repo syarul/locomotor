@@ -11,6 +11,7 @@ function TodoApp() {
       {
         state.todos.map(t => (
           <Todo
+            key={t.id}
             todo={t}
             remove={() => dispatch({ type: 'remove', id: t.id })}
             edit={text => dispatch({ type: 'edit', id: t.id, text: text })}
