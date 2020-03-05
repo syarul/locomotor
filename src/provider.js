@@ -46,8 +46,11 @@ export const useContext = hookus((data, context) => {
   return state
 })
 
-export const setNode = (node, context) => {
+export const setNode = (node, context, attributes) => {
   node.context = context
+  if (attributes !== undefined) {
+    node.attributes && (node.attributes.key = attributes.key)
+  }
   if (node.elementName.match(/Locomotor.Provider./)) {
     const [stack] = node.elementName.match(/([^Locomotor.Provider.])(.*)/g)
     updateProvider(stack, node.attributes)

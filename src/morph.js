@@ -7,16 +7,20 @@ const morph = (node, update) => {
       return node.key
     },
     onBeforeElUpdated: function (fromEl, toEl) {
-      if (nodeMap.has(fromEl) && nodeMap.has(toEl)) {
-        console.log(fromEl, toEl)
+      // sane way to handle event listeners
+      if (nodeMap.has(toEl)) {
+        const n = nodeMap.get(toEl)
         const o = nodeMap.get(fromEl)
-        const { attr, value } = nodeMap.get(toEl)
-        // console.log(ev)
-        
-        console.log(nodeMap.get(toEl))
-        fromEl.removeEventListener(o.attr, o.value)
-        fromEl.addEventListener(attr, value)
-        // nodeMap.delete(fromEl)
+        if (o) {
+          nodeMap.delete(fromEl)
+          for (const i in o) {
+            fromEl.removeEventListener(i, o[i])
+          }
+        }
+        for (const i in n) {
+          fromEl.addEventListener(i, n[i])
+        }
+        nodeMap.set(fromEl, n)
         nodeMap.delete(toEl)
       }
       // spec - https://dom.spec.whatwg.org/#concept-node-equals
@@ -24,6 +28,10 @@ const morph = (node, update) => {
         return false
       }
       return true
+    },
+    onBeforeNodeDiscarded: function (node) {
+      console.log(node)
+      return true;
     },
     childrenOnly: true
   })

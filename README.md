@@ -23,7 +23,7 @@ Some added features includes:-
 
 - Internally it has ```React.memo``` immitation without using one and you don't need to use ```useCallback``` all over the place to handle efficient rendering. Function hooks are only called when state/props changed (*may need to add force render soon*).
 - Reusable function hooks, you can import as many time elsewhere, and the library will isolate each hooks.
-- Do not need ```key``` property when handling list/array mapping.
+- Optional ```key``` property when handling list/array mapping.
 - May not need to ```import``` pragma on every js/jsx that need transpiling.
 - It's only around 4kb gzip.
 

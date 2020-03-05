@@ -29,19 +29,35 @@ function classes (el, attr, value) {
 }
 
 const nodeMap = new (WeakMap || Map)()
-nodeMap.i = new (WeakMap || Map)()
+nodeMap.old = new (WeakMap || Map)()
 
 function evt (el, attr, value) {
   attr = attr.replace(/^on/, '').toLowerCase()
-  // set change as keyup
-  attr = (attr === 'change' && 'keyup') || attr
+
+  const cur = nodeMap.get(el) || {}
+
+  // react like onChange handler
+  // for input
+  if(attr === 'change') {
+    el.addEventListener('keyup', value)
+    el.addEventListener('blur', value)
+
+    nodeMap.set(el, {
+      ...cur,
+      keyup: value,
+      blur: value
+    })
+
+    return false
+  }
 
   // initial event handler
-  el.addEventListener(attr, value, false)
+  el.addEventListener(attr, value)
+
   // on subsequent run we patch the node through WeakMap
   nodeMap.set(el, {
-    attr,
-    value
+    ...cur,
+    [attr]: value
   })
 }
 
@@ -59,19 +75,23 @@ function parseAttr (el, attr, value) {
   }
 }
 
-const createEl = (vtree, fragment, key) => {
+const createEl = (vtree, fragment) => {
   fragment = fragment || document.createDocumentFragment()
   if (vtree === null) return fragment
   const { elementName, attributes, children, context } = vtree
-  if (key !== undefined) {
-    attributes.key = key
-  }
+
   let node = null
   if (typeof vtree === 'object') {
     if (Array.isArray(vtree)) {
       // if it a list we automatically assign a key index.
-      // It's the reason why key property is not needed
-      Array.from(vtree, (vnode, key) => createEl(vnode, fragment, key))
+      // if none is assigned
+      Array.from(vtree, (vnode, key) => {
+        const { attributes } = vnode
+        if (attributes.key === undefined) {
+          vnode.attributes.key = key
+        }
+        createEl(vnode, fragment)
+      })
     } else {
       // if (!elementName) return fragment
       if (context) {
@@ -86,12 +106,6 @@ const createEl = (vtree, fragment, key) => {
         Array.from(children, child => createEl(child, fragment))
       } else {
         node = document.createElement(elementName)
-        // catch focus input
-        // if (node.nodeName === 'INPUT') {
-        //   node.addEventListener('focus', () =>
-        //     nodeMap.i.set(node, true)
-        //   , false)
-        // }
         Array.from(Object.keys(attributes), attr => parseAttr(node, attr, attributes[attr]))
       }
     }

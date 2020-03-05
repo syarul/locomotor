@@ -1,22 +1,21 @@
 export const initialState = {
   counter: 2,
   todos: [{
-    id: 1,
+    id: 'id1',
     text: 'One'
   }, {
-    id: 2,
+    id: 'id2',
     text: 'Two'
   }]
 }
 
 export const reducer = (state, action) => {
-  console.log(action)
   switch (action.type) {
     case 'add':
     {
       const newCounter = state.counter + 1
       const newTodo = {
-        id: newCounter,
+        id: `id${newCounter}`,
         text: action.text
       }
       return {
@@ -42,7 +41,7 @@ export const reducer = (state, action) => {
       const todos = Object.assign([], state.todos)
       todos.splice(idx, 1)
       return {
-        counter: state.counter,
+        counter: state.counter - 1,
         todos: todos
       }
     }

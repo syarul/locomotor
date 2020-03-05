@@ -1,10 +1,12 @@
 import { locoDOM } from 'locomotor'
-import TodoApp from './todo/AddTodo'
+import TodoApp from './todo/TodoApp'
+// import TodoApp from './list'
 
 const props = {
   add: text => {
     console.log(text)
-  }
+  },
+  todo: 'called'
 }
 
 locoDOM.render(

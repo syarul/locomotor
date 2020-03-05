@@ -1,10 +1,12 @@
 import { vtreeRender } from './renderer'
 import { providerMap, setNode } from './provider'
 import { pocus, dataMap } from 'hookuspocus/src/core'
-import { onStateChanged } from 'hookuspocus/src/on'
+import { on } from 'hookuspocus/src/on'
+import { useReducer } from 'hookuspocus/src/use_reducer'
 
 // lifeCycles store
 export const lifeCycles = new (WeakMap || Map)()
+lifeCycles.prev = new (WeakMap || Map)()
 lifeCycles.stack = new (WeakMap || Map)()
 lifeCycles.base = []
 lifeCycles.fn = new (WeakMap || Map)()
@@ -37,12 +39,31 @@ const updateVtree = (node, context, newNode) => {
 const render = (...args) =>
   vtreeRender(updateVtree.apply(null, args))
 
+const onStateChanged = cb =>
+  on(useReducer, (data, reducer, initialArg, init) => {
+    const [state, dispatch] = data.hook(data, reducer, initialArg, init)
+
+    console.log(state)
+
+    return [
+      state,
+      action => {
+        const result = dispatch(action)
+        if (state !== result) {
+          cb(data.context)
+        }
+        return result
+      }
+    ]
+  })
+
 onStateChanged(context => {
   const [rootBaseContext] = lifeCycles.base
-  const [rootContext] = lifeCycles.get(rootBaseContext)
+  const rootContext = lifeCycles.get(rootBaseContext)[0]
+
   const ctx = lifeCycles.fn.get(context)
   let node
-  
+
   // flag context dirty, might be useful on some casses
   lifeCycles.fn.set(context, {
     ...ctx,
@@ -80,7 +101,7 @@ onStateChanged(context => {
   }
 
   const merge = () => {
-    setNode(node, context)
+    setNode(node, context, ctx.p)
     render(vtree.n, context, node)
   }
 
@@ -106,9 +127,22 @@ onStateChanged(context => {
 
 export const lifeCyclesRunReset = lifecycle => {
   // reset stacks once render done
-  Array.from(lifeCycles.base, context =>
-    lifeCycles.stack.set(context, 0)
-  )
+  Array.from(lifeCycles.base, context => {
+    console.log(dataMap.get(context))
+    const stack = lifeCycles.stack.get(context)
+    if (stack !== undefined) {
+      lifeCycles.stack.set(context, 0)
+    } else {
+      const eStack = lifeCycles.get(context)
+      console.log(eStack)
+      // const prevStack = lifeCycles.prev.get(contex) || {}
+      // if (currentStack) {
+      //   Object.keys(currentStack).map(key => {
+
+      //   })
+      // }
+    }
+  })
   lifeCycles.stage = lifecycle
   // reset provider stack
   providerMap.s = 0
@@ -120,10 +154,11 @@ export const lifeCyclesRunReset = lifecycle => {
 
 // generate reusable functions hooks, key is not
 // needed since each function hooks is isolated
-const getContex = fn => {
+const _getContex = fn => {
   const stack = lifeCycles.stack.get(fn) || 0
   const eStack = lifeCycles.get(fn) || []
   const cStack = eStack[stack] || fn.bind({})
+  // console.log(eStack[stack])
   eStack[stack] = cStack
   lifeCycles.set(fn, eStack)
   lifeCycles.stack.set(fn, stack + 1)
@@ -131,23 +166,41 @@ const getContex = fn => {
   return cStack
 }
 
+const getContex = (fn, attributes) => {
+  const { key } = attributes
+  
+  const stack = lifeCycles.stack.get(fn) || (key !== undefined && key)  || 0
+  const eStack = lifeCycles.get(fn) || {}
+  const cStack = eStack[stack] || fn.bind({})
+  // console.log(eStack)
+  eStack[stack] = cStack
+  lifeCycles.set(fn, eStack)
+  if(key === undefined) {
+    lifeCycles.stack.set(fn, stack + 1)
+  }
+  !~lifeCycles.base.indexOf(fn) && lifeCycles.base.push(fn)
+  return cStack
+}
+
 // HORRAY!! pass the context through pocus
 // so our function can use all hooks features
 const createElement = ({ elementName, attributes }) => {
-  const context = getContex(elementName)
+  const context = getContex(elementName, attributes)
+  // console.log(context)
   let node = null
-  const { s, n, p } = lifeCycles.fn.get(context) || {}
+  // const { s, n, p } = lifeCycles.fn.get(context) || {}
   // return memoize node if status is pristine and props unchanged
-  if (s && isEqual(p, attributes)) {
-    node = n
-  } else {
+  // if (s && isEqual(p, attributes)) {
+    // node = n
+  // } else {
     node = pocus([attributes], context)
-  }
-  const setNodeWithContext = node => setNode(node, context)
+  // }
+  // console.log(node)
+  const setNodeWithContext = node => setNode(node, context, attributes)
   node instanceof Promise ? node.then(setNodeWithContext) : setNodeWithContext(node)
   // map the status/attributes where we will be able to retrive on subsequent runs
   lifeCycles.fn.set(context, {
-    s: true,
+    // s: true,
     n: node,
     p: attributes
   })
