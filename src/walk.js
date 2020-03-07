@@ -1,14 +1,14 @@
 import { vtreeRender } from './renderer'
 import { providerMap, setNode } from './provider'
 import { pocus, dataMap } from 'hookuspocus/src/core'
-import { on } from 'hookuspocus/src/on'
-import { useReducer } from 'hookuspocus/src/use_reducer'
+import { onStateChanged } from 'hookuspocus/src/on'
 
 // lifeCycles store
 export const lifeCycles = new (WeakMap || Map)()
-lifeCycles.prev = new (WeakMap || Map)()
+lifeCycles.gen = new (WeakMap || Map)()
 lifeCycles.stack = new (WeakMap || Map)()
 lifeCycles.base = []
+lifeCycles.v = []
 lifeCycles.fn = new (WeakMap || Map)()
 
 // simple compare for objects
@@ -39,70 +39,40 @@ const updateVtree = (node, context, newNode) => {
 const render = (...args) =>
   vtreeRender(updateVtree.apply(null, args))
 
-const onStateChanged = cb =>
-  on(useReducer, (data, reducer, initialArg, init) => {
-    const [state, dispatch] = data.hook(data, reducer, initialArg, init)
-
-    console.log(state)
-
-    return [
-      state,
-      action => {
-        const result = dispatch(action)
-        if (state !== result) {
-          cb(data.context)
-        }
-        return result
-      }
-    ]
-  })
-
-onStateChanged(context => {
+const hydrate = context => {
   const [rootBaseContext] = lifeCycles.base
   const rootContext = lifeCycles.get(rootBaseContext)[0]
-
   const ctx = lifeCycles.fn.get(context)
-  let node
-
-  // flag context dirty, might be useful on some casses
-  lifeCycles.fn.set(context, {
-    ...ctx,
-    s: false
-  })
-
+  let node, vtree
   node = pocus([ctx.p], context)
-
   lifeCycles.fn.set(context, {
     ...ctx,
     n: node
   })
-
   const [promises, resolver] = [[], []]
-
   if (node instanceof Promise) {
     promises.push(node)
     resolver.push(n => {
       node = n
     })
   }
-
-  // if target is rootContext skip all things
-  if (context === rootContext) {
-    return vtreeRender(node)
-  }
-
-  const vtree = lifeCycles.fn.get(rootContext)
-
-  if (vtree.n instanceof Promise) {
-    promises.push(vtree.n)
-    resolver.push(n => {
-      vtree.n = n
-    })
+  if (context !== rootContext) {
+    vtree = lifeCycles.fn.get(rootContext)
+    if (vtree.n instanceof Promise) {
+      promises.push(vtree.n)
+      resolver.push(n => {
+        vtree.n = n
+      })
+    }
   }
 
   const merge = () => {
     setNode(node, context, ctx.p)
-    render(vtree.n, context, node)
+    if (context !== rootContext) {
+      render(vtree.n, context, node)
+    } else {
+      vtreeRender(node)
+    }
   }
 
   if (promises.length) {
@@ -112,35 +82,96 @@ onStateChanged(context => {
   } else {
     merge()
   }
-  // emit changes to render so patching can be done
-  // vtree.n instanceof Promise
-  //   ? vtree.n.then(n => render(n, context, node))
-  //   : render(vtree.n, context, node)
+}
 
-  // // get root props
-  // const { p } = lifeCycles.fn.get(rootContext)
-  // // generate an efficient new vtree
-  // const vtree = pocus([p], rootContext)
-  // // emit changes to render so patching can be done
-  // vtreeRender(vtree)
-})
+class Event {
+  constructor(){
+    this.reg = {}
+  }
+  on(event, fn) {
+    this.reg[event] = fn
+  }
+  emit(event) {
+    this.reg[event] && this.reg[event]()
+  }
+}
 
-export const lifeCyclesRunReset = lifecycle => {
-  // reset stacks once render done
+let debounce, rendering
+const enqueueRender = []
+const toRender = r => rendering = r
+const renderQueue = ([queue]) => {
+  toRender(true)
+  queue()
+  enqueueRender.shift()
+}
+
+export const event = new Event()
+
+event.on('update', () =>
+  enqueueRender.length ?
+    renderQueue(enqueueRender) :
+    toRender(false)
+)
+
+const renderHook = context => { 
+  enqueueRender.push(hydrate.bind(null, context))
+  debounce && clearInterval(debounce)
+  debounce = setInterval(() => {
+    if(!rendering) {
+      clearInterval(debounce)
+      event.emit('update')
+    }
+  })  
+}
+
+onStateChanged(renderHook)
+
+const extractContexts = (vtree, actives = []) => {
+  const { context, children } = vtree || {}
+  if(context !== undefined) {
+    actives.push(context)
+  }
+  const extractList = vtree => extractContexts(vtree, actives)
+  if(Array.isArray(vtree)) {
+    Array.from(vtree, extractList)
+  }
+  if(children && children.length) {
+    Array.from(children, extractList)
+  }
+  return actives
+}
+
+// reset stacks once render done also do house
+// cleaning of unused context generations in
+// in lifecycle stores
+export const lifeCyclesRunReset = (lifecycle, vtree) => {
+  // retrieved active contexts
+  const activeContexts = extractContexts(vtree)
+  lifeCycles.v.push(activeContexts)
+  lifeCycles.v.length > 2 && lifeCycles.v.shift()
+  // filter out unused contexs
+  if (lifeCycles.v.length === 2) {
+    const oldContexts = lifeCycles.v[0]
+    const removals = oldContexts.filter(ctx => !~activeContexts.indexOf(ctx))
+    removals.forEach(ctx => {
+      const index = lifeCycles.gen.get(ctx)
+      const fn = lifeCycles.base[index]
+      if (fn) {
+        const eStack = lifeCycles.get(fn) || {}
+        for(const i in eStack) {
+          (eStack[i] === ctx) && delete eStack[i]
+        }
+        lifeCycles.set(fn, eStack)
+        lifeCycles.gen.delete(ctx)
+        lifeCycles.fn.delete(ctx)
+      }
+    })
+  }
+
   Array.from(lifeCycles.base, context => {
-    console.log(dataMap.get(context))
     const stack = lifeCycles.stack.get(context)
     if (stack !== undefined) {
       lifeCycles.stack.set(context, 0)
-    } else {
-      const eStack = lifeCycles.get(context)
-      console.log(eStack)
-      // const prevStack = lifeCycles.prev.get(contex) || {}
-      // if (currentStack) {
-      //   Object.keys(currentStack).map(key => {
-
-      //   })
-      // }
     }
   })
   lifeCycles.stage = lifecycle
@@ -150,35 +181,66 @@ export const lifeCyclesRunReset = lifecycle => {
   Array.from(providerMap.c, consume)
   // reset providers consumers
   providerMap.c = []
+  // resolve next cycle update
+  console.log('do next update from lifeCyclesRunReset')
+  event.emit('update')
 }
 
-// generate reusable functions hooks, key is not
-// needed since each function hooks is isolated
-const _getContex = fn => {
-  const stack = lifeCycles.stack.get(fn) || 0
-  const eStack = lifeCycles.get(fn) || []
-  const cStack = eStack[stack] || fn.bind({})
-  // console.log(eStack[stack])
-  eStack[stack] = cStack
-  lifeCycles.set(fn, eStack)
-  lifeCycles.stack.set(fn, stack + 1)
-  !~lifeCycles.base.indexOf(fn) && lifeCycles.base.push(fn)
-  return cStack
-}
-
+/**
+ * hooks generation through isolating each
+ * context reference, ideally we still need
+ * to retrieve it again on each cycle generation,
+ * due to certain context may get removed we also
+ * need to do cleanup upon each cycles
+ * @param {elementName} fn The context reference
+ * @param {attributes} attributes The context props
+ */
 const getContex = (fn, attributes) => {
+  // get current key if it has one
   const { key } = attributes
-  
-  const stack = lifeCycles.stack.get(fn) || (key !== undefined && key)  || 0
-  const eStack = lifeCycles.get(fn) || {}
-  const cStack = eStack[stack] || fn.bind({})
-  // console.log(eStack)
-  eStack[stack] = cStack
+  // each generation on context is assigned a stack key
+  const stack = 
+    // retrieve last assigned stack key
+    lifeCycles.stack.get(fn) ||
+    // if current context attributes has key prop 
+    // we used that instead
+    (key !== undefined && key)  ||
+    // assign default index `0` on 1st generation
+    0
+  // get all generations of this context
+  const eStack = 
+    // previous generations
+    lifeCycles.get(fn) || 
+    // create a new generation store if none exist
+    {}
+  // retrieve the actual context
+  const cStack = 
+    // last generation context
+    eStack[stack] || 
+    // isolate the reference with binding
+    // on new generation
+    fn.bind({})
+  // assign the generation in the store if it
+  // a first time generation
+  !eStack[stack] && (eStack[stack] = cStack)
+  // store the generations by reference
   lifeCycles.set(fn, eStack)
+  // if a key was unavailable we increase the stack
+  // count so a subsequent call using the reference
+  // will not get duplicated
   if(key === undefined) {
     lifeCycles.stack.set(fn, stack + 1)
   }
-  !~lifeCycles.base.indexOf(fn) && lifeCycles.base.push(fn)
+  const index = lifeCycles.base.indexOf(fn)
+  if (!~index) {
+    // store all reference in a bookkeeping array
+    lifeCycles.base.push(fn)
+    // reference of the original generations index
+    lifeCycles.gen.set(cStack, lifeCycles.base.length - 1)
+  } else {
+    // if reference already exist we used that instead
+    lifeCycles.gen.set(cStack, index)
+  }
   return cStack
 }
 
@@ -186,21 +248,11 @@ const getContex = (fn, attributes) => {
 // so our function can use all hooks features
 const createElement = ({ elementName, attributes }) => {
   const context = getContex(elementName, attributes)
-  // console.log(context)
-  let node = null
-  // const { s, n, p } = lifeCycles.fn.get(context) || {}
-  // return memoize node if status is pristine and props unchanged
-  // if (s && isEqual(p, attributes)) {
-    // node = n
-  // } else {
-    node = pocus([attributes], context)
-  // }
-  // console.log(node)
+  let node = pocus([attributes], context)
   const setNodeWithContext = node => setNode(node, context, attributes)
   node instanceof Promise ? node.then(setNodeWithContext) : setNodeWithContext(node)
   // map the status/attributes where we will be able to retrive on subsequent runs
   lifeCycles.fn.set(context, {
-    // s: true,
     n: node,
     p: attributes
   })

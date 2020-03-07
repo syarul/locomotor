@@ -12,7 +12,6 @@ const morph = (node, update) => {
         const n = nodeMap.get(toEl)
         const o = nodeMap.get(fromEl)
         if (o) {
-          nodeMap.delete(fromEl)
           for (const i in o) {
             fromEl.removeEventListener(i, o[i])
           }
@@ -30,8 +29,9 @@ const morph = (node, update) => {
       return true
     },
     onBeforeNodeDiscarded: function (node) {
+      // console.log(nodeMap.has(node))
       console.log(node)
-      return true;
+      return true
     },
     childrenOnly: true
   })

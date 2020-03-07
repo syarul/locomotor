@@ -2,7 +2,7 @@ import 'regenerator-runtime/runtime'
 import co from 'co'
 import patch from './patch'
 import morph from './morph'
-import { lifeCyclesRunReset } from './walk'
+import { event, lifeCyclesRunReset } from './walk'
 
 function camelCase (s, o) {
   return `${s.replace(/([A-Z]+)/g, '-$1').toLowerCase()}:${o[s]};`
@@ -150,7 +150,8 @@ class Renderer {
       this.r = rootNode
       const node = createEl(vtree)
       rootNode.appendChild(node)
-      this.emit('init')
+      this.emit('init', vtree)
+      event.emit('update')
     })
   }
 
@@ -158,9 +159,9 @@ class Renderer {
     return new Promise(resolve => resolve(this.r))
   }
 
-  emit (lifecycle) {
+  emit(lifecycle, vtree) {
     this.deffer().then(() =>
-      lifeCyclesRunReset(lifecycle)
+      lifeCyclesRunReset(lifecycle, vtree)
     )
   }
 
@@ -168,7 +169,7 @@ class Renderer {
     resolveVtree(vtree).then(vtree => {
       const node = createEl(vtree)
       morph(this.r, node)
-      this.emit('update')
+      this.emit('update', vtree)
     })
   }
 }
