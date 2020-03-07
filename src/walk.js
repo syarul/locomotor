@@ -12,7 +12,7 @@ lifeCycles.v = []
 lifeCycles.fn = new (WeakMap || Map)()
 
 // simple compare for objects
-// const isEqual = (o, s) => JSON.stringify(o) === JSON.stringify(s)
+const isEqual = (o, s) => JSON.stringify(o) === JSON.stringify(s)
 
 const consume = c => c()
 
@@ -205,7 +205,14 @@ const getContex = (fn, attributes) => {
 // so our function can use all hooks features
 const createElement = ({ elementName, attributes }) => {
   const context = getContex(elementName, attributes)
-  let node = pocus([attributes], context)
+  let node = null
+  const { n, p } = lifeCycles.fn.get(context) || {}
+  // return memoize node if status is pristine and props unchanged
+  if (isEqual(p, attributes)) {
+    node = n
+  } else {
+    node = pocus([attributes], context)
+  }
   const setNodeWithContext = node => setNode(node, context)
   node instanceof Promise ? node.then(setNodeWithContext) : setNodeWithContext(node)
   // store the attributes and the output element

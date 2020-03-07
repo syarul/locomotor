@@ -7,13 +7,11 @@ const DOCUMENT_ELEMENT_TYPE = 1
 // with the addition of handling input element
 
 function isEqual (oldNode, newNode) {
-  
   if (nodeMap.has(newNode)) {
     const n = nodeMap.get(newNode)
     const old = nodeMap.get(oldNode)
     if (old) {
-      nodeMap.delete(oldNode)
-      for(const attr in old) {
+      for (const attr in old) {
         oldNode.removeEventListener(attr, old[attr])
       }
     }
@@ -23,7 +21,6 @@ function isEqual (oldNode, newNode) {
     nodeMap.set(oldNode, n)
     nodeMap.delete(newNode)
   }
-
   return (arbiter(oldNode, newNode) || oldNode.isEqualNode(newNode))
 }
 
@@ -75,24 +72,8 @@ function patch (oldNode, newNode) {
     if (oldNode.nodeType === DOCUMENT_ELEMENT_TYPE) {
       if (isEqual(oldNode, newNode)) return
       if (oldNode.nodeName === newNode.nodeName) {
-        // handle eventListener we could use remove/add event listener too
-        // if ((oldNode.hasAttribute('key') && newNode.hasAttribute('key')) || nodeMap.has(newNode)) {
-          // nodeMap.has(newNode) && nodeMap.delete(newNode)
-          // oldNode.parentNode.replaceChild(newNode, oldNode)
-        // } else {
-          setAttr(oldNode, newNode)
-          diff(oldNode.firstChild, newNode.firstChild, oldNode)
-        // }
-        // quick hack, focus element if it last time was focused
-        // if (nodeMap.i.has(oldNode)) {
-        //   nodeMap.i.delete(oldNode)
-        //   // set focus
-        //   newNode.focus()
-        //   // set cursor position
-        //   const val = newNode.value
-        //   newNode.value = ''
-        //   newNode.value = val
-        // }
+        setAttr(oldNode, newNode)
+        diff(oldNode.firstChild, newNode.firstChild, oldNode)
       } else {
         diff(oldNode.firstChild, newNode.firstChild, oldNode)
       }

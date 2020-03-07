@@ -31,7 +31,4 @@ const renderHook = context => {
   p.then(comitQueue)
 }
 
-onStateChanged(context => {
-    console.log(context)
-    hydrate(context)
-})
+onStateChanged(renderHook)

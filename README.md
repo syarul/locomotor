@@ -25,10 +25,9 @@ Some added features includes:-
 - Reusable function hooks, you can import as many time elsewhere, and the library will isolate each hooks.
 - Optional ```key``` property when handling list/array mapping.
 - May not need to ```import``` pragma on every js/jsx that need transpiling.
-- It's only around 4kb gzip.
+- It's only around 9kb gzip.
 
 Some concern includes:-
-- Event delegation is a bit wonky now, the patching simply replace the old node if it has eventListener attached.
 - Test unit and mvc sample incoming.
 
 ### Quick Getting Start

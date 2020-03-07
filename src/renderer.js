@@ -1,6 +1,6 @@
 import 'regenerator-runtime/runtime'
 import co from 'co'
-import patch from './patch'
+// import patch from './patch'
 import morph from './morph'
 import { lifeCyclesRunReset } from './walk'
 
@@ -38,7 +38,7 @@ function evt (el, attr, value) {
 
   // react like onChange handler
   // for input
-  if(attr === 'change') {
+  if (attr === 'change') {
     el.addEventListener('keyup', value)
     el.addEventListener('blur', value)
 
@@ -78,7 +78,7 @@ function parseAttr (el, attr, value) {
 const createEl = (vtree, fragment) => {
   fragment = fragment || document.createDocumentFragment()
   if (vtree === null) return fragment
-  const { elementName, attributes, children, context } = vtree
+  const { elementName, attributes, children } = vtree
   const createFrom = vnode => createEl(vnode, fragment)
   let node = null
   if (typeof vtree === 'object') {
@@ -145,7 +145,7 @@ class Renderer {
     return new Promise(resolve => resolve(this.r))
   }
 
-  emit(lifecycle, vtree) {
+  emit (lifecycle, vtree) {
     this.deffer().then(() =>
       lifeCyclesRunReset(lifecycle, vtree)
     )
