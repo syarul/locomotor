@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'locomotor'
+import { useState } from 'locomotor'
 
 let i = 0
 
@@ -10,7 +10,6 @@ function App (props) {
   console.log(`${todo} ${i} times!`)
 
   const clickFoo = e => {
-    console.trace('aw')
     setFoo(foo === 1 ? 0 : 1)
   }
 

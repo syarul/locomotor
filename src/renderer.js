@@ -2,7 +2,7 @@ import 'regenerator-runtime/runtime'
 import co from 'co'
 import patch from './patch'
 import morph from './morph'
-import { event, lifeCyclesRunReset } from './walk'
+import { lifeCyclesRunReset } from './walk'
 
 function camelCase (s, o) {
   return `${s.replace(/([A-Z]+)/g, '-$1').toLowerCase()}:${o[s]};`
@@ -79,31 +79,18 @@ const createEl = (vtree, fragment) => {
   fragment = fragment || document.createDocumentFragment()
   if (vtree === null) return fragment
   const { elementName, attributes, children, context } = vtree
-
+  const createFrom = vnode => createEl(vnode, fragment)
   let node = null
   if (typeof vtree === 'object') {
     if (Array.isArray(vtree)) {
-      // if it a list we automatically assign a key index.
-      // if none is assigned
-      Array.from(vtree, (vnode, key) => {
-        const { attributes } = vnode
-        if (attributes.key === undefined) {
-          vnode.attributes.key = key
-        }
-        createEl(vnode, fragment)
-      })
+      Array.from(vtree, createFrom)
     } else {
-      // if (!elementName) return fragment
-      if (context) {
-        // handle element with context, we need to attach listener
-        // on dismount to clean all side effects - tba
-      }
       // handle fragment
       if (elementName === 'Locomotor.Fragment') {
-        Array.from(children, child => createEl(child, fragment))
+        Array.from(children, createFrom)
       // handle provider
       } else if (elementName.match(/Locomotor.Provider./)) {
-        Array.from(children, child => createEl(child, fragment))
+        Array.from(children, createFrom)
       } else {
         node = document.createElement(elementName)
         Array.from(Object.keys(attributes), attr => parseAttr(node, attr, attributes[attr]))
@@ -151,7 +138,6 @@ class Renderer {
       const node = createEl(vtree)
       rootNode.appendChild(node)
       this.emit('init', vtree)
-      event.emit('update')
     })
   }
 

@@ -3,9 +3,6 @@ import { nodeMap } from './renderer'
 
 const morph = (node, update) => {
   morphdom(node, update, {
-    getNodeKey: function (node) {
-      return node.key
-    },
     onBeforeElUpdated: function (fromEl, toEl) {
       // sane way to handle event listeners
       if (nodeMap.has(toEl)) {
@@ -26,11 +23,6 @@ const morph = (node, update) => {
       if (fromEl.isEqualNode(toEl)) {
         return false
       }
-      return true
-    },
-    onBeforeNodeDiscarded: function (node) {
-      // console.log(nodeMap.has(node))
-      console.log(node)
       return true
     },
     childrenOnly: true

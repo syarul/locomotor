@@ -15,7 +15,7 @@ export const reducer = (state, action) => {
     {
       const newCounter = state.counter + 1
       const newTodo = {
-        id: `id${newCounter}`,
+        id: `id${Math.random()}`,
         text: action.text
       }
       return {
