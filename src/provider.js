@@ -6,6 +6,7 @@ export const providerMap = new (WeakMap || Map)()
 providerMap.h = []
 providerMap.c = []
 providerMap.d = new (WeakMap || Map)()
+providerMap.u = []
 
 const updateProvider = (stack, attributes) => {
   const value = providerMap.get(providerMap.h[stack]) || {}

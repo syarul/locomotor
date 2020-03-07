@@ -18,7 +18,7 @@ const config = {
   module: {
     rules: [
       {
-        test: /\.js$/,
+        test: /\.(js|jsx)$/,
         loader: 'babel-loader',
         exclude: /node_modules/
       },
@@ -30,7 +30,7 @@ const config = {
   },
   resolve: {
     modules: ['node_modules'],
-    extensions: ['*', '.js'],
+    extensions: ["*", ".js", ".jsx"],
     alias: {
       locomotor: path.resolve(__dirname, './index.js')
     }

@@ -1,6 +1,6 @@
-# locomotor v0.1.9
+# locomotor v0.1.10
 
-[![npm package](https://img.shields.io/badge/npm-0.1.9-blue.svg)](https://www.npmjs.com/package/locomotor) [![browser build](https://img.shields.io/badge/unpkg-0.1.9-ff69b4.svg)](https://unpkg.com/locomotor@0.1.9/locomotor-min.js)
+[![npm package](https://img.shields.io/badge/npm-0.1.10-blue.svg)](https://www.npmjs.com/package/locomotor) [![browser build](https://img.shields.io/badge/unpkg-0.1.10-ff69b4.svg)](https://unpkg.com/locomotor@0.1.10/locomotor-min.js)
 
 A React like hook without lingo
 
@@ -23,12 +23,11 @@ Some added features includes:-
 
 - Internally it has ```React.memo``` immitation without using one and you don't need to use ```useCallback``` all over the place to handle efficient rendering. Function hooks are only called when state/props changed (*may need to add force render soon*).
 - Reusable function hooks, you can import as many time elsewhere, and the library will isolate each hooks.
-- Do not need ```key``` property when handling list/array mapping.
+- Optional ```key``` property when handling list/array mapping.
 - May not need to ```import``` pragma on every js/jsx that need transpiling.
-- It's only around 4kb gzip.
+- It's only around 9kb gzip.
 
 Some concern includes:-
-- Event delegation is a bit wonky now, the patching simply replace the old node if it has eventListener attached.
 - Test unit and mvc sample incoming.
 
 ### Quick Getting Start

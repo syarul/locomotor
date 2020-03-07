@@ -10,12 +10,19 @@
 		<div id="app"></div>
 		<script>
 			const locoDOM = locomotor.locoDOM
-			locoDOM.render({
-			        elementName: 'div',
-			        attributes: {},
-			        children: ['hello locomotor!']
-			    },
-			    document.getElementById('app'))
+			function app() {
+				return {
+					elementName: 'button',
+					attributes: {
+						onClick: function () {
+							alert('locomotor!')
+						}
+					},
+					children: ['hello']
+				}
+			}
+
+			locoDOM.render(app(), document.getElementById('app'))
 		</script>
 	</body>
 </html>

@@ -1,4 +1,7 @@
-import patch from './patch'
+import 'regenerator-runtime/runtime'
+import co from 'co'
+// import patch from './patch'
+import morph from './morph'
 import { lifeCyclesRunReset } from './walk'
 
 function camelCase (s, o) {
@@ -26,11 +29,36 @@ function classes (el, attr, value) {
 }
 
 const nodeMap = new (WeakMap || Map)()
+nodeMap.old = new (WeakMap || Map)()
 
 function evt (el, attr, value) {
-  el.addEventListener(attr.replace(/^on/, '').toLowerCase(), value, false)
+  attr = attr.replace(/^on/, '').toLowerCase()
+
+  const cur = nodeMap.get(el) || {}
+
+  // react like onChange handler
+  // for input
+  if (attr === 'change') {
+    el.addEventListener('keyup', value)
+    el.addEventListener('blur', value)
+
+    nodeMap.set(el, {
+      ...cur,
+      keyup: value,
+      blur: value
+    })
+
+    return false
+  }
+
+  // initial event handler
+  el.addEventListener(attr, value)
+
   // on subsequent run we patch the node through WeakMap
-  nodeMap.set(el, true)
+  nodeMap.set(el, {
+    ...cur,
+    [attr]: value
+  })
 }
 
 function parseAttr (el, attr, value) {
@@ -47,34 +75,22 @@ function parseAttr (el, attr, value) {
   }
 }
 
-let promises = []
-
-function createEl (vtree, fragment) {
+const createEl = (vtree, fragment) => {
   fragment = fragment || document.createDocumentFragment()
   if (vtree === null) return fragment
-  if (vtree instanceof Promise) {
-    promises.push(vtree)
-    return vtree.then(v => createEl(v, fragment))
-  }
-  const { elementName, attributes, children, context } = vtree
+  const { elementName, attributes, children } = vtree
+  const createFrom = vnode => createEl(vnode, fragment)
   let node = null
   if (typeof vtree === 'object') {
     if (Array.isArray(vtree)) {
-      Array.from(vtree, vnode => createEl(vnode, fragment))
+      Array.from(vtree, createFrom)
     } else {
-      // if (!elementName) return fragment
-      if (context) {
-        // handle element with context, we need to attach listener
-        // on dismount to clean all side effects - tba
-      }
       // handle fragment
       if (elementName === 'Locomotor.Fragment') {
-        Array.from(children, child => createEl(child, fragment))
+        Array.from(children, createFrom)
       // handle provider
       } else if (elementName.match(/Locomotor.Provider./)) {
-        Array.from(children, child => {
-          createEl(child, fragment)
-        })
+        Array.from(children, createFrom)
       } else {
         node = document.createElement(elementName)
         Array.from(Object.keys(attributes), attr => parseAttr(node, attr, attributes[attr]))
@@ -90,42 +106,57 @@ function createEl (vtree, fragment) {
   return fragment
 }
 
-function handler (mount, transform, event, handle) {
-  if (promises.length) {
-    Promise.all(promises).then(() => {
-      handle(mount, transform)
-      this.emit(event)
-      promises = []
-    })
-  } else {
-    handle(mount, transform)
-    this.emit(event)
-  }
-}
+// resolve all promises in vtree object
+// using co since it's more compact compare to core-js
+const resolveVtree = vtree =>
+  co.wrap(function * () {
+    if (vtree instanceof Promise) {
+      vtree = yield Promise.resolve(vtree)
+      return yield resolveVtree(vtree)
+    } else if (Array.isArray(vtree)) {
+      return yield Array.from(vtree, resolveVtree)
+    } else if (typeof vtree !== 'object') {
+      return vtree
+    } else {
+      let { elementName, children } = vtree
+      if (elementName instanceof Promise) {
+        elementName = yield Promise.resolve(elementName)
+      }
+      children = yield Array.from(children || [], resolveVtree)
+      return {
+        ...vtree,
+        elementName,
+        children
+      }
+    }
+  })(true)
 
 class Renderer {
   render (vtree, rootNode) {
-    this.r = rootNode
-    vtree = createEl(vtree)
-    handler.call(this, rootNode, vtree, 'init', (el, node) =>
-      el.appendChild(node)
-    )
+    resolveVtree(vtree).then(vtree => {
+      this.r = rootNode
+      const node = createEl(vtree)
+      rootNode.appendChild(node)
+      this.emit('init', vtree)
+    })
   }
 
   deffer () {
     return new Promise(resolve => resolve(this.r))
   }
 
-  emit (lifecycle) {
-    this.deffer()
-      .then(lifeCyclesRunReset.bind(null, lifecycle))
+  emit (lifecycle, vtree) {
+    this.deffer().then(() =>
+      lifeCyclesRunReset(lifecycle, vtree)
+    )
   }
 
   on (vtree) {
-    vtree = createEl(vtree)
-    handler.call(this, this.r, vtree, 'update', (el, node) =>
-      patch(el, node)
-    )
+    resolveVtree(vtree).then(vtree => {
+      const node = createEl(vtree)
+      morph(this.r, node)
+      this.emit('update', vtree)
+    })
   }
 }
 
