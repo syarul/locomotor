@@ -29,7 +29,6 @@ function classes (el, attr, value) {
 }
 
 const nodeMap = new (WeakMap || Map)()
-nodeMap.old = new (WeakMap || Map)()
 
 function evt (el, attr, value) {
   attr = attr.replace(/^on/, '').toLowerCase()
