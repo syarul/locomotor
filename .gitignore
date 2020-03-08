@@ -1,5 +1,7 @@
 node_modules
 dist
+.vscode
 yarn-lock
-yarn-error.log
+*.log
 package-lock.json
+.npmignore

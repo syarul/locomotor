@@ -1,10 +1,8 @@
-# locomotor v0.1.10
+# locomotor v0.1.11
 
-[![npm package](https://img.shields.io/badge/npm-0.1.10-blue.svg)](https://www.npmjs.com/package/locomotor) [![browser build](https://img.shields.io/badge/unpkg-0.1.10-ff69b4.svg)](https://unpkg.com/locomotor@0.1.10/locomotor-min.js)
+[![npm package](https://img.shields.io/badge/npm-0.1.11-blue.svg)](https://www.npmjs.com/package/locomotor) [![browser build](https://img.shields.io/badge/unpkg-0.1.11-ff69b4.svg)](https://unpkg.com/locomotor@0.1.11/locomotor-min.js)
 
 A React like hook without lingo
-
-> Experimental stage
 
 ### What's this
 Basically a view library which using function hooks through
@@ -19,6 +17,8 @@ Some added features includes:-
 - createContext
 - useContext
 
+Working todoMVC sample is [here](https://github.com/syarul/locomotor-todomvc)
+
 ### What's the different
 
 - Internally it has ```React.memo``` immitation without using one and you don't need to use ```useCallback``` all over the place to handle efficient rendering. Function hooks are only called when state/props changed (*may need to add force render soon*).
@@ -28,7 +28,7 @@ Some added features includes:-
 - It's only around 9kb gzip.
 
 Some concern includes:-
-- Test unit and mvc sample incoming.
+- Test unit incoming.
 
 ### Quick Getting Start
 
