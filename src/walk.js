@@ -2,6 +2,7 @@ import { vtreeRender } from './renderer'
 import { providerMap, setNode } from './provider'
 import { pocus, dataMap } from 'hookuspocus/src/core'
 import { comitQueue } from './queue'
+import './utils'
 
 // lifeCycles store
 export const lifeCycles = new (WeakMap || Map)()
@@ -28,9 +29,9 @@ const updateVtree = (node, context, newNode) => {
     node.context = context
   } else {
     if (Array.isArray(node)) {
-      Array.from(node, update)
+      node.loop(update)
     } else if (node.children && node.children.length) {
-      Array.from(node.children, update)
+      node.children.loop(update)
     }
   }
   return node
@@ -91,10 +92,10 @@ const extractContexts = (vtree, actives = []) => {
   }
   const extractList = vtree => extractContexts(vtree, actives)
   if (Array.isArray(vtree)) {
-    Array.from(vtree, extractList)
+    vtree.loop(extractList)
   }
   if (children && children.length) {
-    Array.from(children, extractList)
+    children.loop(extractList)
   }
   return actives
 }
@@ -128,7 +129,7 @@ export const lifeCyclesRunReset = (lifecycle, vtree) => {
     })
   }
 
-  Array.from(lifeCycles.base, context => {
+  lifeCycles.base.loop(context => {
     const stack = lifeCycles.stack.get(context)
     if (stack !== undefined) {
       lifeCycles.stack.set(context, 0)
@@ -138,7 +139,7 @@ export const lifeCyclesRunReset = (lifecycle, vtree) => {
   // reset provider stack
   providerMap.s = 0
   // consume providers
-  Array.from(providerMap.c, consume)
+  providerMap.c.loop(consume)
   // reset providers consumers
   providerMap.c = []
   // resolve next cycle update
@@ -234,7 +235,7 @@ export const walk = node => {
     if (children && children.length) {
       return {
         ...node,
-        children: Array.from(children, walk)
+        children: children.loop(walk)
       }
     }
     return node

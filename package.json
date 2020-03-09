@@ -1,6 +1,6 @@
 {
   "name": "locomotor",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "description": "A react hook without lingo",
   "main": "locomotor-min.js",
   "scripts": {
@@ -8,7 +8,7 @@
     "build": "npm run bundle",
     "bundle": "webpack --config webpack.bundle.js",
     "prebuild": "npm run lint",
-    "postbuild": "uglifyjs locomotor-min.js --pure-funcs classCallCheck -c unsafe,collapse_vars,evaluate,loops,keep_fargs=false,pure_getters,unused,dead_code,warnings -m -o locomotor-min.js --source-map url='https://unpkg.com/locomotor@0.1.12/locomotor-min.js.map'",
+    "postbuild": "uglifyjs locomotor-min.js --pure-funcs classCallCheck -c unsafe,collapse_vars,evaluate,loops,keep_fargs=false,pure_getters,unused,dead_code,warnings -m -o locomotor-min.js --source-map url='https://unpkg.com/locomotor@0.1.13/locomotor-min.js.map'",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "standard locomotor.js src/**/*.js examples/**/*.js test/**/*.js --fix"
   },

@@ -3,6 +3,7 @@ import co from 'co'
 // import patch from './patch'
 import morph from './morph'
 import { lifeCyclesRunReset } from './walk'
+import './utils'
 
 function camelCase (s, o) {
   return `${s.replace(/([A-Z]+)/g, '-$1').toLowerCase()}:${o[s]};`
@@ -82,24 +83,24 @@ const createEl = (vtree, fragment) => {
   let node = null
   if (typeof vtree === 'object') {
     if (Array.isArray(vtree)) {
-      Array.from(vtree, createFrom)
+      vtree.loop(createFrom)
     } else {
       // handle fragment
       if (elementName === 'Locomotor.Fragment') {
-        Array.from(children, createFrom)
+        children.loop(createFrom)
       // handle provider
       } else if (elementName.match(/Locomotor.Provider./)) {
-        Array.from(children, createFrom)
+        children.loop(createFrom)
       } else {
         node = document.createElement(elementName)
-        Array.from(Object.keys(attributes), attr => parseAttr(node, attr, attributes[attr]))
+        Object.keys(attributes).loop(attr => parseAttr(node, attr, attributes[attr]))
       }
     }
   } else {
     node = document.createTextNode(vtree)
   }
   if (children && children.length) {
-    Array.from(children, child => createEl(child, node))
+    children.loop(child => createEl(child, node))
   }
   node && fragment.appendChild(node)
   return fragment
@@ -113,7 +114,7 @@ const resolveVtree = vtree =>
       vtree = yield Promise.resolve(vtree)
       return yield resolveVtree(vtree)
     } else if (Array.isArray(vtree)) {
-      return yield Array.from(vtree, resolveVtree)
+      return yield vtree.loop(resolveVtree)
     } else if (typeof vtree !== 'object') {
       return vtree
     } else {
@@ -121,7 +122,7 @@ const resolveVtree = vtree =>
       if (elementName instanceof Promise) {
         elementName = yield Promise.resolve(elementName)
       }
-      children = yield Array.from(children || [], resolveVtree)
+      children = yield (children || []).loop(resolveVtree)
       return {
         ...vtree,
         elementName,

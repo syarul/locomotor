@@ -1,5 +1,6 @@
 import { onStateChanged } from 'hookuspocus/src/on'
 import { hydrate } from './walk'
+import './utils'
 
 let enqueueRender = []
 
@@ -10,11 +11,16 @@ let enqueueRender = []
  * queue.
  */
 const renderQueue = () => {
-  const queues = Array.from(new Set(enqueueRender))
-  const [queue] = queues
+  // const queues = Array.from(new Set(enqueueRender))
+  // const [queue] = queues
+  // hydrate(queue)
+  // // remove finished queue
+  // queues.shift()
+  // enqueueRender = queues
+  const queues = enqueueRender.uniqueReverse()
+  // console.log(queues.length, enqueueRender.length)
+  const queue = queues.pop()
   hydrate(queue)
-  // remove finished queue
-  queues.shift()
   enqueueRender = queues
 }
 
@@ -30,7 +36,7 @@ export const comitQueue = () =>
  */
 const renderHook = context => {
   enqueueRender.push(context)
-  const p = new Promise(requestAnimationFrame)
+  const p = new Promise(setImmediate)
   p.then(comitQueue)
 }
 
