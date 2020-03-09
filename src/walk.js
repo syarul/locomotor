@@ -1,8 +1,8 @@
-import { vtreeRender } from './renderer'
+// import { vtreeRender } from './renderer'
 import { providerMap, setNode } from './provider'
 import { pocus, dataMap } from 'hookuspocus/src/core'
 import { comitQueue } from './queue'
-import './utils'
+import { isEqual, loop } from './utils'
 
 // lifeCycles store
 export const lifeCycles = new (WeakMap || Map)()
@@ -15,7 +15,7 @@ lifeCycles.c = []
 lifeCycles.w = []
 
 // simple compare for objects
-const isEqual = (o, s) => JSON.stringify(o) === JSON.stringify(s)
+// const isEqual = (o, s) => JSON.stringify(o) === JSON.stringify(s)
 
 const consume = c => c()
 
@@ -34,23 +34,23 @@ const updateVtree = (node, context, newNode, rootContext) => {
       lifeCycles.c.push(node.context)
     }
     if (Array.isArray(node)) {
-      node.loop(update)
+      loop(node, update)
     } else if (node.children && node.children.length) {
-      node.children.loop(update)
+      loop(node.children, update)
     }
   }
   return node
 }
 
-const render = (...args) =>
-  vtreeRender(updateVtree.apply(null, args))
+// const render = (...args) =>
+//   vtreeRender(updateVtree.apply(null, args))
 
-export const hydrate = context => {
+export const hydrate = (context, vtree, callback) => {
   const [rootBaseContext] = lifeCycles.base
   const rootContext = lifeCycles.get(rootBaseContext)[0]
   lifeCycles.c.push(rootContext)
   const ctx = lifeCycles.fn.get(context)
-  let node, vtree
+  let node
   node = pocus([ctx.p], context)
   lifeCycles.fn.set(context, {
     ...ctx,
@@ -77,9 +77,14 @@ export const hydrate = context => {
   const merge = () => {
     setNode(node, context)
     if (context !== rootContext) {
-      render(vtree.n, context, node, rootContext)
+      const n = updateVtree(vtree.n, context, node, rootContext)
+      vtree.n = n
+      callback(vtree)
     } else {
-      vtreeRender(node)
+      callback({
+        ...ctx,
+        n: node
+      })
     }
   }
 
@@ -118,7 +123,7 @@ export const flattenContext = () => {
 // reset stacks once render done also do house
 // cleaning of unused context generations in
 // in lifecycle stores
-export const lifeCyclesRunReset = (lifecycle, vtree) => {
+export const lifeCyclesRunReset = lifecycle => {
   // console.log(lifeCycles.w)
   // retrieved active contexts
   const activeContexts = lifeCycles.w[1] //extractContexts(vtree)
@@ -145,7 +150,7 @@ export const lifeCyclesRunReset = (lifecycle, vtree) => {
     })
   }
 
-  lifeCycles.base.loop(context => {
+  loop(lifeCycles.base, context => {
     const stack = lifeCycles.stack.get(context)
     if (stack !== undefined) {
       lifeCycles.stack.set(context, 0)
@@ -155,11 +160,9 @@ export const lifeCyclesRunReset = (lifecycle, vtree) => {
   // reset provider stack
   providerMap.s = 0
   // consume providers
-  providerMap.c.loop(consume)
+  loop(providerMap.c, consume)
   // reset providers consumers
   providerMap.c = []
-  // resolve next cycle update
-  comitQueue()
 }
 
 /**
@@ -252,7 +255,7 @@ export const walk = node => {
     if (children && children.length) {
       return {
         ...node,
-        children: children.loop(walk)
+        children: loop(children, walk)
       }
     }
     return node

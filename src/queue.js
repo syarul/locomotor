@@ -1,23 +1,36 @@
 import { onStateChanged } from 'hookuspocus/src/on'
 import { hydrate } from './walk'
-import './utils'
+import { batchRender } from './renderer'
+import { uniqueReverse }  from './utils'
 
 let enqueueRender = []
 
 /**
  * perform render sequence by filtering duplicates context
  * this in general increase performance by big margin offset, 
- * as to efficiently removing unnecessary duplicates, render
- * queue.
+ * as to efficiently removing unnecessary duplicates.
  */
 const renderQueue = () => {
-  // const queues = Array.from(new Set(enqueueRender))
-  const queues = enqueueRender.uniqueReverse()
+
+  const queues = uniqueReverse(enqueueRender)
   // console.log(queues.length, enqueueRender.length)
-  // remove finished queue
-  const queue = queues.pop()
-  hydrate(queue)
-  enqueueRender = queues
+  
+  let vtree
+  
+  while (queues.length) {
+    // get current queue
+    const queue = queues.pop()
+    hydrate(queue, vtree, nvtree => {
+      vtree = nvtree
+      if(queues.length === 0) {
+        // batch render
+        batchRender(vtree.n)
+        // clean up render queue
+        enqueueRender = []
+      }
+    })
+  }
+
 }
 
 export const comitQueue = () =>
@@ -32,7 +45,7 @@ export const comitQueue = () =>
  */
 const renderHook = context => {
   enqueueRender.push(context)
-  const p = new Promise(setImmediate)
+  const p = new Promise(setImmediate) // new Promise(resolve => setTimeout(resolve, 100))
   p.then(comitQueue)
 }
 

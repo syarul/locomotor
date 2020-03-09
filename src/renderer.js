@@ -3,7 +3,7 @@ import co from 'co'
 // import patch from './patch'
 import morph from './morph'
 import { lifeCyclesRunReset, flattenContext } from './walk'
-import './utils'
+import { loop } from './utils'
 
 function camelCase (s, o) {
   return `${s.replace(/([A-Z]+)/g, '-$1').toLowerCase()}:${o[s]};`
@@ -29,12 +29,14 @@ function classes (el, attr, value) {
   }
 }
 
-const nodeMap = new (WeakMap || Map)()
+let nodeMap = new (WeakMap || Map)()
 
 function evt (el, attr, value) {
   attr = attr.replace(/^on/, '').toLowerCase()
 
   const cur = nodeMap.get(el) || {}
+
+  // currently still leaking
 
   // react like onChange handler
   // for input
@@ -83,24 +85,24 @@ const createEl = (vtree, fragment) => {
   let node = null
   if (typeof vtree === 'object') {
     if (Array.isArray(vtree)) {
-      vtree.loop(createFrom)
+      loop(vtree, createFrom)
     } else {
       // handle fragment
       if (elementName === 'Locomotor.Fragment') {
-        children.loop(createFrom)
+        loop(children, createFrom)
       // handle provider
       } else if (elementName.match(/Locomotor.Provider./)) {
-        children.loop(createFrom)
+        loop(children, createFrom)
       } else {
         node = document.createElement(elementName)
-        Object.keys(attributes).loop(attr => parseAttr(node, attr, attributes[attr]))
+        loop(Object.keys(attributes), attr => parseAttr(node, attr, attributes[attr]))
       }
     }
   } else {
     node = document.createTextNode(vtree)
   }
   if (children && children.length) {
-    children.loop(child => createEl(child, node))
+    loop(children, child => createEl(child, node))
   }
   node && fragment.appendChild(node)
   return fragment
@@ -114,7 +116,7 @@ const resolveVtree = vtree =>
       vtree = yield Promise.resolve(vtree)
       return yield resolveVtree(vtree)
     } else if (Array.isArray(vtree)) {
-      return yield vtree.loop(resolveVtree)
+      return yield loop(vtree, resolveVtree)
     } else if (typeof vtree !== 'object') {
       return vtree
     } else {
@@ -122,7 +124,7 @@ const resolveVtree = vtree =>
       if (elementName instanceof Promise) {
         elementName = yield Promise.resolve(elementName)
       }
-      children = yield (children || []).loop(resolveVtree)
+      children = yield loop((children || []), resolveVtree)
       return {
         ...vtree,
         elementName,
@@ -146,15 +148,16 @@ class Renderer {
     return new Promise(resolve => resolve(this.r))
   }
 
-  emit (lifecycle, vtree) {
+  emit (lifecycle) {
     this.deffer().then(() =>
-      lifeCyclesRunReset(lifecycle, vtree)
+      lifeCyclesRunReset(lifecycle)
     )
   }
 
   on (vtree) {
     resolveVtree(vtree).then(vtree => {
       flattenContext()
+      // nodeMap = new (WeakMap || Map)()
       const node = createEl(vtree)
       morph(this.r, node)
       this.emit('update', vtree)
@@ -164,10 +167,10 @@ class Renderer {
 
 const locoDOM = new Renderer()
 
-const vtreeRender = vtree => locoDOM.on(vtree)
+const batchRender = vtree => locoDOM.on(vtree)
 
 export {
   locoDOM as default,
   nodeMap,
-  vtreeRender
+  batchRender
 }
