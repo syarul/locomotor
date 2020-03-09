@@ -2,7 +2,7 @@ import 'regenerator-runtime/runtime'
 import co from 'co'
 // import patch from './patch'
 import morph from './morph'
-import { lifeCyclesRunReset } from './walk'
+import { lifeCyclesRunReset, flattenContext } from './walk'
 import './utils'
 
 function camelCase (s, o) {
@@ -134,6 +134,7 @@ const resolveVtree = vtree =>
 class Renderer {
   render (vtree, rootNode) {
     resolveVtree(vtree).then(vtree => {
+      flattenContext()
       this.r = rootNode
       const node = createEl(vtree)
       rootNode.appendChild(node)
@@ -153,6 +154,7 @@ class Renderer {
 
   on (vtree) {
     resolveVtree(vtree).then(vtree => {
+      flattenContext()
       const node = createEl(vtree)
       morph(this.r, node)
       this.emit('update', vtree)
