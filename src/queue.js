@@ -14,10 +14,14 @@ const renderQueue = () => {
 
   const queues = uniqueReverse(enqueueRender)
   // console.log(queues.length, enqueueRender.length)
+
+  const queue = queues.pop()
+  hydrate(queue)
+  enqueueRender = queues
   
-  let vtree
+  // let vtree
   
-  while (queues.length) {
+  /* while (queues.length) {
     // get current queue
     const queue = queues.pop()
     hydrate(queue, vtree, nvtree => {
@@ -29,7 +33,7 @@ const renderQueue = () => {
         enqueueRender = []
       }
     })
-  }
+  } */
 
 }
 

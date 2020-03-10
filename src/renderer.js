@@ -30,6 +30,7 @@ function classes (el, attr, value) {
 }
 
 let nodeMap = new (WeakMap || Map)()
+nodeMap.a = new (WeakMap || Map)()
 
 function evt (el, attr, value) {
   attr = attr.replace(/^on/, '').toLowerCase()
@@ -52,6 +53,8 @@ function evt (el, attr, value) {
 
     return false
   }
+
+  // el.setAttribute('__evt', value)
 
   // initial event handler
   el.addEventListener(attr, value)
@@ -139,7 +142,7 @@ class Renderer {
       flattenContext()
       this.r = rootNode
       const node = createEl(vtree)
-      rootNode.appendChild(node)
+      morph(this.r, node)
       this.emit('init', vtree)
     })
   }
@@ -157,7 +160,9 @@ class Renderer {
   on (vtree) {
     resolveVtree(vtree).then(vtree => {
       flattenContext()
-      // nodeMap = new (WeakMap || Map)()
+      const a = nodeMap.a
+      nodeMap = new(WeakMap || Map)()
+      nodeMap.a = a
       const node = createEl(vtree)
       morph(this.r, node)
       this.emit('update', vtree)

@@ -1,4 +1,4 @@
-// import { vtreeRender } from './renderer'
+import { batchRender } from './renderer'
 import { providerMap, setNode } from './provider'
 import { pocus, dataMap } from 'hookuspocus/src/core'
 import { comitQueue } from './queue'
@@ -42,15 +42,15 @@ const updateVtree = (node, context, newNode, rootContext) => {
   return node
 }
 
-// const render = (...args) =>
-//   vtreeRender(updateVtree.apply(null, args))
+const render = (...args) =>
+  batchRender(updateVtree.apply(null, args))
 
-export const hydrate = (context, vtree, callback) => {
+export const hydrate = (context/* , vtree, callback */) => {
   const [rootBaseContext] = lifeCycles.base
   const rootContext = lifeCycles.get(rootBaseContext)[0]
   lifeCycles.c.push(rootContext)
   const ctx = lifeCycles.fn.get(context)
-  let node
+  let node, vtree
   node = pocus([ctx.p], context)
   lifeCycles.fn.set(context, {
     ...ctx,
@@ -77,14 +77,16 @@ export const hydrate = (context, vtree, callback) => {
   const merge = () => {
     setNode(node, context)
     if (context !== rootContext) {
-      const n = updateVtree(vtree.n, context, node, rootContext)
-      vtree.n = n
-      callback(vtree)
+      // const n = updateVtree(vtree.n, context, node, rootContext)
+      // vtree.n = n
+      // callback(vtree)
+      render(vtree.n, context, node, rootContext)
     } else {
-      callback({
-        ...ctx,
-        n: node
-      })
+      // callback({
+      //   ...ctx,
+      //   n: node
+      // })
+      batchRender(node)
     }
   }
 
