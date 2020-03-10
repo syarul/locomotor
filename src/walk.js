@@ -45,12 +45,12 @@ const updateVtree = (node, context, newNode, rootContext) => {
 const render = (...args) =>
   batchRender(updateVtree.apply(null, args))
 
-export const hydrate = (context/* , vtree, callback */) => {
+export const hydrate = (context, vtree, callback) => {
   const [rootBaseContext] = lifeCycles.base
   const rootContext = lifeCycles.get(rootBaseContext)[0]
   lifeCycles.c.push(rootContext)
   const ctx = lifeCycles.fn.get(context)
-  let node, vtree
+  let node//, vtree
   node = pocus([ctx.p], context)
   lifeCycles.fn.set(context, {
     ...ctx,
@@ -77,16 +77,16 @@ export const hydrate = (context/* , vtree, callback */) => {
   const merge = () => {
     setNode(node, context)
     if (context !== rootContext) {
-      // const n = updateVtree(vtree.n, context, node, rootContext)
-      // vtree.n = n
-      // callback(vtree)
-      render(vtree.n, context, node, rootContext)
+      const n = updateVtree(vtree.n, context, node, rootContext)
+      vtree.n = n
+      callback(vtree)
+      // render(vtree.n, context, node, rootContext)
     } else {
-      // callback({
-      //   ...ctx,
-      //   n: node
-      // })
-      batchRender(node)
+      callback({
+        ...ctx,
+        n: node
+      })
+      // batchRender(node)
     }
   }
 
@@ -165,6 +165,7 @@ export const lifeCyclesRunReset = lifecycle => {
   loop(providerMap.c, consume)
   // reset providers consumers
   providerMap.c = []
+  // comitQueue()
 }
 
 /**
