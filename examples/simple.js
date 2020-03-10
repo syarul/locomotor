@@ -10,12 +10,13 @@ function App (props) {
   console.log(`${todo} ${i} times!`)
 
   const clickFoo = e => {
+    console.log('foo')
     setFoo(foo === 1 ? 0 : 1)
   }
 
   return (
     <div>
-      <button onClick={clickFoo}>
+      <button onclick={clickFoo}>
         {todo}: {foo}
       </button>
     </div>

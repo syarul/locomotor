@@ -3,6 +3,7 @@ import co from 'co'
 import morph from './morph'
 import { lifeCyclesRunReset, flattenContext } from './walk'
 import { loop } from './utils'
+import h from 'hyperscript'
 
 function camelCase (s, o) {
   return `${s.replace(/([A-Z]+)/g, '-$1').toLowerCase()}:${o[s]};`
@@ -74,7 +75,7 @@ function parseAttr (el, attr, value) {
   }
 }
 
-const createEl = (vtree, fragment) => {
+const _createEl = (vtree, fragment) => {
   fragment = fragment || document.createDocumentFragment()
   if (vtree === null) return fragment
   const { elementName, attributes, children } = vtree
@@ -103,6 +104,22 @@ const createEl = (vtree, fragment) => {
   }
   node && fragment.appendChild(node)
   return fragment
+}
+
+const createEl = (vtree, fragment) => {
+  // console.log(vtree)
+  fragment = fragment || document.createDocumentFragment()
+  const { elementName, attributes, children } = vtree
+  if(typeof vtree === 'object') {
+    if(Array.isArray(vtree)) {
+      return loop(vtree, createEl)
+    } else {
+      return h(elementName, attributes, loop(children, createEl))
+    }
+  } else {
+    return vtree
+  }
+
 }
 
 // resolve all promises in vtree object
@@ -135,9 +152,10 @@ class Renderer {
     resolveVtree(vtree).then(vtree => {
       flattenContext()
       this.r = rootNode
-      const node = createEl(vtree)
-      morph(this.r, node)
-      this.emit('init', vtree)
+      Promise.resolve(createEl(vtree)).then(node => {
+        morph(this.r, node)
+        this.emit('init', vtree)
+      })
     })
   }
 
@@ -157,9 +175,11 @@ class Renderer {
       const a = nodeMap.a
       nodeMap = new (WeakMap || Map)()
       nodeMap.a = a
-      const node = createEl(vtree)
-      morph(this.r, node)
-      this.emit('update', vtree)
+      Promise.resolve(createEl(vtree)).then(node => {
+        console.log(node)
+        morph(this.r, node)
+        this.emit('update', vtree)
+      })
     })
   }
 }
