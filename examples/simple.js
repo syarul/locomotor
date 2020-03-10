@@ -16,7 +16,7 @@ function App (props) {
 
   return (
     <div>
-      <button onclick={clickFoo}>
+      <button onClick={clickFoo}>
         {todo}: {foo}
       </button>
     </div>

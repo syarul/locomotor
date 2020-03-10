@@ -106,15 +106,42 @@ const _createEl = (vtree, fragment) => {
   return fragment
 }
 
+const evtHyper = attributes => {
+  const newAttributes = {}
+  for (let attr in attributes) {
+    if (typeof attributes[attr] === 'function') {
+      const nattr = attr.toLowerCase()
+      if (attr === 'onchange') {
+        newAttributes['onkeyup'] = attributes[attr]
+        newAttributes['onblur'] = attributes[attr]
+        // nodeMap.set(el, {
+        //   ...cur,
+        //   keyup: value,
+        //   blur: value
+        // })
+      } else {
+        // nodeMap.set(el, {
+        //   ...cur,
+        //   [attr]: value
+        // })
+        newAttributes[nattr] = attributes[attr]
+      }
+    } else {
+      newAttributes[attr] = attributes[attr]
+    }
+  }
+  return newAttributes
+}
+
 const createEl = (vtree, fragment) => {
   // console.log(vtree)
-  fragment = fragment || document.createDocumentFragment()
+  // fragment = fragment || document.createDocumentFragment()
   const { elementName, attributes, children } = vtree
   if(typeof vtree === 'object') {
     if(Array.isArray(vtree)) {
       return loop(vtree, createEl)
     } else {
-      return h(elementName, attributes, loop(children, createEl))
+      return h(elementName, evtHyper(attributes), loop(children, createEl))
     }
   } else {
     return vtree
