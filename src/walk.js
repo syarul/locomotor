@@ -2,20 +2,16 @@ import { batchRender } from './renderer'
 import { providerMap, setNode } from './provider'
 import { pocus, dataMap } from 'hookuspocus/src/core'
 import { comitQueue } from './queue'
-import { isEqual, loop } from './utils'
+import { isEqual, loop, filter } from './utils'
 
 // lifeCycles store
 export const lifeCycles = new (WeakMap || Map)()
 lifeCycles.gen = new (WeakMap || Map)()
 lifeCycles.stack = new (WeakMap || Map)()
 lifeCycles.base = []
-lifeCycles.v = []
 lifeCycles.fn = new (WeakMap || Map)()
 lifeCycles.c = []
 lifeCycles.w = []
-
-// simple compare for objects
-// const isEqual = (o, s) => JSON.stringify(o) === JSON.stringify(s)
 
 const consume = c => c()
 
@@ -45,7 +41,7 @@ const updateVtree = (node, context, newNode, rootContext) => {
 const render = (...args) =>
   batchRender(updateVtree.apply(null, args))
 
-export const hydrate = (context/* , vtree, callback */) => {
+export const hydrate = context => {
   const [rootBaseContext] = lifeCycles.base
   const rootContext = lifeCycles.get(rootBaseContext)[0]
   lifeCycles.c.push(rootContext)
@@ -77,15 +73,8 @@ export const hydrate = (context/* , vtree, callback */) => {
   const merge = () => {
     setNode(node, context)
     if (context !== rootContext) {
-      // const n = updateVtree(vtree.n, context, node, rootContext)
-      // vtree.n = n
-      // callback(vtree)
       render(vtree.n, context, node, rootContext)
     } else {
-      // callback({
-      //   ...ctx,
-      //   n: node
-      // })
       batchRender(node)
     }
   }
@@ -99,24 +88,9 @@ export const hydrate = (context/* , vtree, callback */) => {
   }
 }
 
-// const extractContexts = (vtree, actives = []) => {
-//   const { context, children } = vtree || {}
-//   if (context !== undefined) {
-//     actives.push(context)
-//   }
-//   const extractList = vtree => extractContexts(vtree, actives)
-//   if (Array.isArray(vtree)) {
-//     vtree.loop(extractList)
-//   }
-//   if (children && children.length) {
-//     children.loop(extractList)
-//   }
-//   return actives
-// }
-
 export const flattenContext = () => {
   lifeCycles.w.push(lifeCycles.c)
-  if(lifeCycles.w.length > 2) {
+  if (lifeCycles.w.length > 2) {
     lifeCycles.w.shift()
   }
   lifeCycles.c = []
@@ -126,15 +100,12 @@ export const flattenContext = () => {
 // cleaning of unused context generations in
 // in lifecycle stores
 export const lifeCyclesRunReset = lifecycle => {
-  // console.log(lifeCycles.w)
   // retrieved active contexts
-  const activeContexts = lifeCycles.w[1] //extractContexts(vtree)
-  // lifeCycles.v.push(activeContexts)
-  // lifeCycles.v.length > 2 && lifeCycles.v.shift()
+  const activeContexts = lifeCycles.w[1]
   // filter out unused contexs
   if (lifeCycles.w.length === 2) {
     const oldContexts = lifeCycles.w[0]
-    const removals = oldContexts.filter(ctx => !~activeContexts.indexOf(ctx))
+    const removals = filter(oldContexts, ctx => !~activeContexts.findIndex(c => c === ctx))
     removals.forEach(ctx => {
       // cleanup dataMap
       dataMap.delete(ctx)

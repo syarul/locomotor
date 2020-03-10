@@ -14,6 +14,14 @@ export const uniqueReverse = l => {
   return a
 }
 
+export const filter = (arr, cond) => {
+  const match = []
+  for (let i = 0; i < arr.length; i++) {
+    if (cond(arr[i])) match.push(arr[i])
+  }
+  return match
+}
+
 export const isEqual = function (x, y) {
   if (x === y) return true
   // if both x and y are null or undefined and exactly the same
@@ -26,10 +34,10 @@ export const isEqual = function (x, y) {
   // test there constructor.
 
   for (var p in x) {
-    if (!x.hasOwnProperty(p)) continue
+    if (!Object.prototype.hasOwnProperty.call(x, p)) continue
     // other properties were tested using x.constructor === y.constructor
 
-    if (!y.hasOwnProperty(p)) return false
+    if (!Object.prototype.hasOwnProperty.call(y, p)) return false
     // allows to compare x[ p ] and y[ p ] when set to undefined
 
     if (x[p] === y[p]) continue
@@ -38,12 +46,12 @@ export const isEqual = function (x, y) {
     if (typeof (x[p]) !== 'object') return false
     // Numbers, Strings, Functions, Booleans must be strictly equal
 
-      if (!isEqual(x[p], y[p])) return false
+    if (!isEqual(x[p], y[p])) return false
     // Objects and Arrays must be tested recursively
   }
 
   for (p in y) {
-    if (y.hasOwnProperty(p) && !x.hasOwnProperty(p)) return false
+    if (Object.prototype.hasOwnProperty.call(y, p) && !Object.prototype.hasOwnProperty.call(y, p)) return false
     // allows x[ p ] to be set to undefined
   }
   return true

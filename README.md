@@ -19,9 +19,8 @@ Some added features include:-
 
 Working todoMVC sample is [here](https://github.com/syarul/locomotor-todomvc)
 
-### What's the different
+### Info
 
-- Internally it has ```React.memo``` imitation without using one and you don't need to use ```useCallback``` all over the place to handle efficient rendering. Function hooks are only called when state/props changed (*may need to add force render soon*). This has a side negative effect on state behavior when it we want to reset to the initial state, and the hook function isn't triggered. So may need a workaround this and most can be solved using ```useReducer``` or higher-order functions.
 - Reusable function hooks, you can import as many times elsewhere, and the library will isolate each hook.
 - Optional ```key``` property when handling list/array mapping.
 - May not need to ```import``` pragma on every js/jsx that need transpiling.

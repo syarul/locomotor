@@ -13,7 +13,7 @@ function AddTodo({add}) {
 
   return (
     <div>
-      <input value={text} onChange={onChange} />
+      <input value={text} onChange={onChange} autofocus=''/>
       <button onClick={onClick}>Add {text}</button>
     </div>
   )

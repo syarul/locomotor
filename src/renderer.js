@@ -1,6 +1,5 @@
 import 'regenerator-runtime/runtime'
 import co from 'co'
-// import patch from './patch'
 import morph from './morph'
 import { lifeCyclesRunReset, flattenContext } from './walk'
 import { loop } from './utils'
@@ -19,11 +18,11 @@ function styleToStr (obj) {
 
 function classes (el, attr, value) {
   if (typeof value === 'object') {
-    el.setAttribute('class', Object.keys(value)
-      .filter(c => value[c])
-      .map(c => c)
-      .join(' ')
-    )
+    const str = []
+    for (const i in value) {
+      str.push(value[i])
+    }
+    el.setAttribute('class', str.join(' '))
   } else {
     el.setAttribute('class', value)
   }
@@ -37,10 +36,7 @@ function evt (el, attr, value) {
 
   const cur = nodeMap.get(el) || {}
 
-  // currently still leaking
-
   // react like onChange handler
-  // for input
   if (attr === 'change') {
     el.addEventListener('keyup', value)
     el.addEventListener('blur', value)
@@ -53,8 +49,6 @@ function evt (el, attr, value) {
 
     return false
   }
-
-  // el.setAttribute('__evt', value)
 
   // initial event handler
   el.addEventListener(attr, value)
@@ -161,7 +155,7 @@ class Renderer {
     resolveVtree(vtree).then(vtree => {
       flattenContext()
       const a = nodeMap.a
-      nodeMap = new(WeakMap || Map)()
+      nodeMap = new (WeakMap || Map)()
       nodeMap.a = a
       const node = createEl(vtree)
       morph(this.r, node)
