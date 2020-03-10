@@ -1,23 +1,22 @@
-import { vtreeRender } from './renderer'
+import { batchRender } from './renderer'
 import { providerMap, setNode } from './provider'
 import { pocus, dataMap } from 'hookuspocus/src/core'
 import { comitQueue } from './queue'
+import { isEqual, loop, filter } from './utils'
 
 // lifeCycles store
 export const lifeCycles = new (WeakMap || Map)()
 lifeCycles.gen = new (WeakMap || Map)()
 lifeCycles.stack = new (WeakMap || Map)()
 lifeCycles.base = []
-lifeCycles.v = []
 lifeCycles.fn = new (WeakMap || Map)()
-
-// simple compare for objects
-const isEqual = (o, s) => JSON.stringify(o) === JSON.stringify(s)
+lifeCycles.c = []
+lifeCycles.w = []
 
 const consume = c => c()
 
-const updateVtree = (node, context, newNode) => {
-  const update = n => updateVtree(n, context, newNode)
+const updateVtree = (node, context, newNode, rootContext) => {
+  const update = n => updateVtree(n, context, newNode, rootContext)
   if (node instanceof Promise) {
     node.then(update)
   }
@@ -27,21 +26,25 @@ const updateVtree = (node, context, newNode) => {
     }
     node.context = context
   } else {
+    if (node.context && node.context !== rootContext) {
+      lifeCycles.c.push(node.context)
+    }
     if (Array.isArray(node)) {
-      Array.from(node, update)
+      loop(node, update)
     } else if (node.children && node.children.length) {
-      Array.from(node.children, update)
+      loop(node.children, update)
     }
   }
   return node
 }
 
 const render = (...args) =>
-  vtreeRender(updateVtree.apply(null, args))
+  batchRender(updateVtree.apply(null, args))
 
 export const hydrate = context => {
   const [rootBaseContext] = lifeCycles.base
   const rootContext = lifeCycles.get(rootBaseContext)[0]
+  lifeCycles.c.push(rootContext)
   const ctx = lifeCycles.fn.get(context)
   let node, vtree
   node = pocus([ctx.p], context)
@@ -57,6 +60,7 @@ export const hydrate = context => {
     })
   }
   if (context !== rootContext) {
+    lifeCycles.c.push(context)
     vtree = lifeCycles.fn.get(rootContext)
     if (vtree.n instanceof Promise) {
       promises.push(vtree.n)
@@ -69,9 +73,9 @@ export const hydrate = context => {
   const merge = () => {
     setNode(node, context)
     if (context !== rootContext) {
-      render(vtree.n, context, node)
+      render(vtree.n, context, node, rootContext)
     } else {
-      vtreeRender(node)
+      batchRender(node)
     }
   }
 
@@ -84,33 +88,24 @@ export const hydrate = context => {
   }
 }
 
-const extractContexts = (vtree, actives = []) => {
-  const { context, children } = vtree || {}
-  if (context !== undefined) {
-    actives.push(context)
+export const flattenContext = () => {
+  lifeCycles.w.push(lifeCycles.c)
+  if (lifeCycles.w.length > 2) {
+    lifeCycles.w.shift()
   }
-  const extractList = vtree => extractContexts(vtree, actives)
-  if (Array.isArray(vtree)) {
-    Array.from(vtree, extractList)
-  }
-  if (children && children.length) {
-    Array.from(children, extractList)
-  }
-  return actives
+  lifeCycles.c = []
 }
 
 // reset stacks once render done also do house
 // cleaning of unused context generations in
 // in lifecycle stores
-export const lifeCyclesRunReset = (lifecycle, vtree) => {
+export const lifeCyclesRunReset = lifecycle => {
   // retrieved active contexts
-  const activeContexts = extractContexts(vtree)
-  lifeCycles.v.push(activeContexts)
-  lifeCycles.v.length > 2 && lifeCycles.v.shift()
+  const activeContexts = lifeCycles.w[1]
   // filter out unused contexs
-  if (lifeCycles.v.length === 2) {
-    const oldContexts = lifeCycles.v[0]
-    const removals = oldContexts.filter(ctx => !~activeContexts.indexOf(ctx))
+  if (lifeCycles.w.length === 2) {
+    const oldContexts = lifeCycles.w[0]
+    const removals = filter(oldContexts, ctx => !~activeContexts.findIndex(c => c === ctx))
     removals.forEach(ctx => {
       // cleanup dataMap
       dataMap.delete(ctx)
@@ -128,7 +123,7 @@ export const lifeCyclesRunReset = (lifecycle, vtree) => {
     })
   }
 
-  Array.from(lifeCycles.base, context => {
+  loop(lifeCycles.base, context => {
     const stack = lifeCycles.stack.get(context)
     if (stack !== undefined) {
       lifeCycles.stack.set(context, 0)
@@ -138,10 +133,9 @@ export const lifeCyclesRunReset = (lifecycle, vtree) => {
   // reset provider stack
   providerMap.s = 0
   // consume providers
-  Array.from(providerMap.c, consume)
+  loop(providerMap.c, consume)
   // reset providers consumers
   providerMap.c = []
-  // resolve next cycle update
   comitQueue()
 }
 
@@ -205,6 +199,7 @@ const getContex = (fn, attributes) => {
 // so our function can use all hooks features
 const createElement = ({ elementName, attributes }) => {
   const context = getContex(elementName, attributes)
+  lifeCycles.c.push(context)
   let node = null
   const { n, p } = lifeCycles.fn.get(context) || {}
   // return memoize node if status is pristine and props unchanged
@@ -234,7 +229,7 @@ export const walk = node => {
     if (children && children.length) {
       return {
         ...node,
-        children: Array.from(children, walk)
+        children: loop(children, walk)
       }
     }
     return node

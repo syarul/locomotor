@@ -1,6 +1,6 @@
-# locomotor v0.1.12
+# locomotor v0.1.13
 
-[![npm package](https://img.shields.io/badge/npm-0.1.12-blue.svg)](https://www.npmjs.com/package/locomotor) [![browser build](https://img.shields.io/badge/unpkg-0.1.12-ff69b4.svg)](https://unpkg.com/locomotor@0.1.12/locomotor-min.js)
+[![npm package](https://img.shields.io/badge/npm-0.1.13-blue.svg)](https://www.npmjs.com/package/locomotor) [![browser build](https://img.shields.io/badge/unpkg-0.1.13-ff69b4.svg)](https://unpkg.com/locomotor@0.1.13/locomotor-min.js)
 
 A React like hook without lingo
 
@@ -11,7 +11,7 @@ A view library which using function hooks through
 - useEffect
 - useLayoutEffect
 
-Which powered by Michael Klein's [hookuspocus](https://github.com/michael-klein/hookuspocus)
+See Michael Klein's [hookuspocus](https://github.com/michael-klein/hookuspocus) for more info.
 
 Some added features include:-
 - createContext
@@ -19,9 +19,8 @@ Some added features include:-
 
 Working todoMVC sample is [here](https://github.com/syarul/locomotor-todomvc)
 
-### What's the different
+### Info
 
-- Internally it has ```React.memo``` imitation without using one and you don't need to use ```useCallback``` all over the place to handle efficient rendering. Function hooks are only called when state/props changed (*may need to add force render soon*). This has a side negative effect on state behavior when it we want to reset to the initial state, and the hook function isn't triggered. So may need a workaround this and most can be solved using ```useReducer``` or higher-order functions.
 - Reusable function hooks, you can import as many times elsewhere, and the library will isolate each hook.
 - Optional ```key``` property when handling list/array mapping.
 - May not need to ```import``` pragma on every js/jsx that need transpiling.
@@ -30,7 +29,7 @@ Working todoMVC sample is [here](https://github.com/syarul/locomotor-todomvc)
 Some concern includes:-
 - Event delegation, for faster lifecycle updates and better performance.
 - Plain callbacks/Promises to reduce file size and dependency on regenerator-runtime.
-- Replacing ```setTimeout``` with ```requestAnimationFrame```.
+- Improving render queue.
 - Removing redundant operations.
 - Test unit
 
