@@ -4323,6 +4323,11 @@ object.values@^1.1.0:
     function-bind "^1.1.1"
     has "^1.0.3"
 
+observable@^2.1.4:
+  version "2.1.4"
+  resolved "https://registry.yarnpkg.com/observable/-/observable-2.1.4.tgz#a0f6bff42ec1e0a069874a9b0c3d15f4cef43a34"
+  integrity sha1-oPa/9C7B4KBph0qbDD0V9M70OjQ=
+
 obuf@^1.0.0, obuf@^1.1.2:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/obuf/-/obuf-1.1.2.tgz#09bea3343d41859ebd446292d11c9d4db619084e"

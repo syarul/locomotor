@@ -1,8 +1,9 @@
-import { batchRender } from './renderer'
+import { batchRender, createEl, nodeMap } from './renderer'
 import { providerMap, setNode } from './provider'
 import { pocus, dataMap } from 'hookuspocus/src/core'
 import { comitQueue } from './queue'
 import { isEqual, loop, filter } from './utils'
+import patch from './patch'
 
 // lifeCycles store
 export const lifeCycles = new (WeakMap || Map)()
@@ -42,50 +43,21 @@ const render = (...args) =>
   batchRender(updateVtree.apply(null, args))
 
 export const hydrate = context => {
-  const [rootBaseContext] = lifeCycles.base
-  const rootContext = lifeCycles.get(rootBaseContext)[0]
-  lifeCycles.c.push(rootContext)
+
   const ctx = lifeCycles.fn.get(context)
-  let node, vtree
-  node = pocus([ctx.p], context)
+ 
+  const n = pocus([ctx.p], context)
+  
+  const v = createEl(n)
+
   lifeCycles.fn.set(context, {
     ...ctx,
-    n: node
+    n,
+    v,
   })
-  const [promises, resolver] = [[], []]
-  if (node instanceof Promise) {
-    promises.push(node)
-    resolver.push(n => {
-      node = n
-    })
-  }
-  if (context !== rootContext) {
-    lifeCycles.c.push(context)
-    vtree = lifeCycles.fn.get(rootContext)
-    if (vtree.n instanceof Promise) {
-      promises.push(vtree.n)
-      resolver.push(n => {
-        vtree.n = n
-      })
-    }
-  }
 
-  const merge = () => {
-    setNode(node, context)
-    if (context !== rootContext) {
-      render(vtree.n, context, node, rootContext)
-    } else {
-      batchRender(node)
-    }
-  }
+  ctx.v.dispatchEvent(ctx.o)
 
-  if (promises.length) {
-    Promise.all(promises).then(r =>
-      r.map((r, i) => resolver[i](r))
-    ).then(merge)
-  } else {
-    merge()
-  }
 }
 
 export const flattenContext = () => {
@@ -199,21 +171,43 @@ const getContex = (fn, attributes) => {
 // so our function can use all hooks features
 const createElement = ({ elementName, attributes }) => {
   const context = getContex(elementName, attributes)
-  lifeCycles.c.push(context)
+  // lifeCycles.c.push(context)
   let node = null
-  const { n, p } = lifeCycles.fn.get(context) || {}
+  const ctx = lifeCycles.fn.get(context) || {}
+
+  const { n, p, v } = ctx
   // return memoize node if status is pristine and props unchanged
   if (isEqual(p, attributes)) {
     node = n
   } else {
     node = pocus([attributes], context)
   }
-  const setNodeWithContext = node => setNode(node, context)
+
+  const nv = createEl(node)
+
+  const o = ctx.o || new Event('__context__')
+
+  const e = () => {
+    const ctx = lifeCycles.fn.get(context)
+    console.log('event called!')
+    ctx.v.addEventListener(o.type, e)
+    patch(nv.parentNode, ctx.v)
+  }
+
+  nv.addEventListener(o.type, e)
+
+  const setNodeWithContext = node => setNode(node, {
+    o,
+    v: nv
+  })
   node instanceof Promise ? node.then(setNodeWithContext) : setNodeWithContext(node)
   // store the attributes and the output element
   lifeCycles.fn.set(context, {
     n: node,
-    p: attributes
+    p: attributes,
+    o,
+    e,
+    v: nv
   })
   return node
 }

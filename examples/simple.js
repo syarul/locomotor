@@ -9,8 +9,10 @@ function App (props) {
   i++
   console.log(`${todo} ${i} times!`)
 
+  // console.log(foo)
+
   const clickFoo = e => {
-    console.log('foo')
+    console.log(foo)
     setFoo(foo === 1 ? 0 : 1)
   }
 

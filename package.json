@@ -33,6 +33,7 @@
     "hookuspocus": "https://github.com/syarul/hookuspocus",
     "hyperscript": "^2.0.2",
     "morphdom": "^2.5.12",
+    "observable": "^2.1.4",
     "regenerator-runtime": "^0.13.3"
   },
   "devDependencies": {

@@ -1,9 +1,12 @@
 import 'regenerator-runtime/runtime'
 import co from 'co'
 import morph from './morph'
-import { lifeCyclesRunReset, flattenContext } from './walk'
+import { lifeCyclesRunReset, flattenContext, lifeCycles } from './walk'
 import { loop } from './utils'
-import h from 'hyperscript'
+import hyperscript from 'hyperscript'
+import observable from 'observable'
+
+const h = hyperscript.context()
 
 function camelCase (s, o) {
   return `${s.replace(/([A-Z]+)/g, '-$1').toLowerCase()}:${o[s]};`
@@ -30,7 +33,6 @@ function classes (el, attr, value) {
 }
 
 let nodeMap = new (WeakMap || Map)()
-nodeMap.a = new (WeakMap || Map)()
 
 function evt (el, attr, value) {
   attr = attr.replace(/^on/, '').toLowerCase()
@@ -106,10 +108,12 @@ const _createEl = (vtree, fragment) => {
   return fragment
 }
 
-const evtHyper = attributes => {
+const evtHyper = function(attributes) {
   const newAttributes = {}
+
   for (let attr in attributes) {
     if (typeof attributes[attr] === 'function') {
+      nodeMap.set(attributes[attr], attr)
       const nattr = attr.toLowerCase()
       if (attr === 'onchange') {
         newAttributes['onkeyup'] = attributes[attr]
@@ -133,15 +137,14 @@ const evtHyper = attributes => {
   return newAttributes
 }
 
-const createEl = (vtree, fragment) => {
-  // console.log(vtree)
-  // fragment = fragment || document.createDocumentFragment()
+export const createEl = (vtree, fragment) => {
+  // h.cleanup()
   const { elementName, attributes, children } = vtree
   if(typeof vtree === 'object') {
     if(Array.isArray(vtree)) {
       return loop(vtree, createEl)
     } else {
-      return h(elementName, evtHyper(attributes), loop(children, createEl))
+      return h(elementName, evtHyper.call(h, attributes), loop(children, createEl))
     }
   } else {
     return vtree
@@ -177,12 +180,10 @@ const resolveVtree = vtree =>
 class Renderer {
   render (vtree, rootNode) {
     resolveVtree(vtree).then(vtree => {
-      flattenContext()
-      this.r = rootNode
-      Promise.resolve(createEl(vtree)).then(node => {
-        morph(this.r, node)
-        this.emit('init', vtree)
-      })
+      const [rootBaseContext] = lifeCycles.base
+      const rootContext = lifeCycles.get(rootBaseContext)[0]
+      const { v } = lifeCycles.fn.get(rootContext) || {}
+      rootNode.appendChild(v)
     })
   }
 
@@ -199,9 +200,9 @@ class Renderer {
   on (vtree) {
     resolveVtree(vtree).then(vtree => {
       flattenContext()
-      const a = nodeMap.a
-      nodeMap = new (WeakMap || Map)()
-      nodeMap.a = a
+      // const a = nodeMap.a
+      // nodeMap = new (WeakMap || Map)()
+      // nodeMap.a = a
       Promise.resolve(createEl(vtree)).then(node => {
         console.log(node)
         morph(this.r, node)
