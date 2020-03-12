@@ -1,134 +1,31 @@
 import 'regenerator-runtime/runtime'
 import co from 'co'
 import morph from './morph'
-import { lifeCyclesRunReset, flattenContext, lifeCycles } from './walk'
+import { lifeCycles } from './walk'
 import { loop } from './utils'
 import hyperscript from 'hyperscript'
-import observable from 'observable'
+// import observable from 'observable'
 
 const h = hyperscript.context()
 
-function camelCase (s, o) {
-  return `${s.replace(/([A-Z]+)/g, '-$1').toLowerCase()}:${o[s]};`
-}
-
-function styleToStr (obj) {
-  let style = ''
-  for (const attr in obj) {
-    style += camelCase(attr, obj)
-  }
-  return style
-}
-
-function classes (el, attr, value) {
-  if (typeof value === 'object') {
-    const str = []
-    for (const i in value) {
-      str.push(value[i])
-    }
-    el.setAttribute('class', str.join(' '))
-  } else {
-    el.setAttribute('class', value)
-  }
-}
-
 let nodeMap = new (WeakMap || Map)()
 
-function evt (el, attr, value) {
-  attr = attr.replace(/^on/, '').toLowerCase()
-
-  const cur = nodeMap.get(el) || {}
-
-  // react like onChange handler
-  if (attr === 'change') {
-    el.addEventListener('keyup', value)
-    el.addEventListener('blur', value)
-
-    nodeMap.set(el, {
-      ...cur,
-      keyup: value,
-      blur: value
-    })
-
-    return false
-  }
-
-  // initial event handler
-  el.addEventListener(attr, value)
-
-  // on subsequent run we patch the node through WeakMap
-  nodeMap.set(el, {
-    ...cur,
-    [attr]: value
-  })
-}
-
-function parseAttr (el, attr, value) {
-  if (typeof value === 'function' && attr.match(/^on/)) {
-    return evt.apply(null, arguments)
-  } else if (attr === 'className' || attr === 'class') {
-    return classes.apply(null, arguments)
-  } else if (attr === 'style' && typeof value === 'object') {
-    return el.setAttribute(attr, styleToStr(value))
-  } else if (typeof value === 'boolean') {
-    return value && el.setAttribute(attr, '')
-  } else {
-    return el.setAttribute(attr, value)
-  }
-}
-
-const _createEl = (vtree, fragment) => {
-  fragment = fragment || document.createDocumentFragment()
-  if (vtree === null) return fragment
-  const { elementName, attributes, children } = vtree
-  const createFrom = vnode => createEl(vnode, fragment)
-  let node = null
-  if (typeof vtree === 'object') {
-    if (Array.isArray(vtree)) {
-      loop(vtree, createFrom)
-    } else {
-      // handle fragment
-      if (elementName === 'Locomotor.Fragment') {
-        loop(children, createFrom)
-      // handle provider
-      } else if (elementName.match(/Locomotor.Provider./)) {
-        loop(children, createFrom)
-      } else {
-        node = document.createElement(elementName)
-        loop(Object.keys(attributes), attr => parseAttr(node, attr, attributes[attr]))
-      }
-    }
-  } else {
-    node = document.createTextNode(vtree)
-  }
-  if (children && children.length) {
-    loop(children, child => createEl(child, node))
-  }
-  node && fragment.appendChild(node)
-  return fragment
-}
-
-const evtHyper = function(attributes) {
+const evtHyper = function(attributes, rev) {
   const newAttributes = {}
-
   for (let attr in attributes) {
     if (typeof attributes[attr] === 'function') {
-      nodeMap.set(attributes[attr], attr)
-      const nattr = attr.toLowerCase()
       if (attr === 'onchange') {
         newAttributes['onkeyup'] = attributes[attr]
         newAttributes['onblur'] = attributes[attr]
-        // nodeMap.set(el, {
-        //   ...cur,
-        //   keyup: value,
-        //   blur: value
-        // })
+        rev.push({
+          keyup: attributes[attr],
+          blur: attributes[attr]
+        })
       } else {
-        // nodeMap.set(el, {
-        //   ...cur,
-        //   [attr]: value
-        // })
-        newAttributes[nattr] = attributes[attr]
+        rev.push({
+          [attr.slice(2).toLocaleLowerCase()]: attributes[attr]
+        })
+        newAttributes[attr.toLocaleLowerCase()] = attributes[attr]
       }
     } else {
       newAttributes[attr] = attributes[attr]
@@ -137,14 +34,19 @@ const evtHyper = function(attributes) {
   return newAttributes
 }
 
-export const createEl = (vtree, fragment) => {
-  // h.cleanup()
+export const createEl = vtree => {
+  h.cleanup()
   const { elementName, attributes, children } = vtree
   if(typeof vtree === 'object') {
     if(Array.isArray(vtree)) {
       return loop(vtree, createEl)
     } else {
-      return h(elementName, evtHyper.call(h, attributes), loop(children, createEl))
+      const rev = []
+      const n = h(elementName, evtHyper(attributes, rev), loop(children, createEl))
+      if(rev.length) {
+        loop(rev, e => nodeMap.set(n, e))
+      }
+      return n
     }
   } else {
     return vtree
@@ -156,8 +58,11 @@ export const createEl = (vtree, fragment) => {
 // using co since it's more compact compare to core-js
 const resolveVtree = vtree =>
   co.wrap(function * () {
+    console.log(vtree)
+    const setNode = vtree.setNode
     if (vtree instanceof Promise) {
       vtree = yield Promise.resolve(vtree)
+      if (setNode) vtree.setNode = setNode
       return yield resolveVtree(vtree)
     } else if (Array.isArray(vtree)) {
       return yield loop(vtree, resolveVtree)
@@ -179,11 +84,17 @@ const resolveVtree = vtree =>
 
 class Renderer {
   render (vtree, rootNode) {
+    const setNode = vtree.setNode
     resolveVtree(vtree).then(vtree => {
       const [rootBaseContext] = lifeCycles.base
       const rootContext = lifeCycles.get(rootBaseContext)[0]
-      const { v } = lifeCycles.fn.get(rootContext) || {}
-      rootNode.appendChild(v)
+      // console.log(vtree)
+      setNode(vtree)
+      const ctx = lifeCycles.fn.get(rootContext) || {}
+      // Promise.all(lifeCycles.c).then(r => {
+      //   console.log(lifeCycles.fn.get(rootContext))
+      // })
+      rootNode.appendChild(ctx.v)
     })
   }
 
@@ -199,7 +110,7 @@ class Renderer {
 
   on (vtree) {
     resolveVtree(vtree).then(vtree => {
-      flattenContext()
+      // flattenContext()
       // const a = nodeMap.a
       // nodeMap = new (WeakMap || Map)()
       // nodeMap.a = a

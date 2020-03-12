@@ -1,4 +1,5 @@
 export const loop = (arr, fn) => {
+  if(!arr) return 
   const a = []
   for (let i = 0, l = arr.length; i < l; i++) {
     a.push(fn(arr[i]))

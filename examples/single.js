@@ -11,6 +11,7 @@ function App (props) {
   console.log(`${todo} ${i} times!`)
 
   const clickFoo = e => {
+    console.log('aw')
     setFoo(foo === 1 ? 0 : 1)
   }
 

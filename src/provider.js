@@ -1,4 +1,3 @@
-
 import { hookus } from 'hookuspocus/src/core'
 import { useReducer } from 'hookuspocus/src/use_reducer'
 
@@ -8,7 +7,7 @@ providerMap.c = []
 providerMap.d = new (WeakMap || Map)()
 providerMap.u = []
 
-const updateProvider = (stack, attributes) => {
+export const updateProvider = (stack, attributes) => {
   const value = providerMap.get(providerMap.h[stack]) || {}
   let consumer = { ...value }
   for (const attr in attributes) {
@@ -45,10 +44,3 @@ export const useContext = hookus((data, context) => {
   providerMap.d.set(context, action => dispatch(action))
   return state
 })
-
-export const setNode = node => {
-  if (node.elementName.match(/Locomotor.Provider./)) {
-    const [stack] = node.elementName.match(/([^Locomotor.Provider.])(.*)/g)
-    updateProvider(stack, node.attributes)
-  }
-}

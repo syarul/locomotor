@@ -2,6 +2,7 @@ import { onStateChanged } from 'hookuspocus/src/on'
 import { hydrate } from './walk'
 import { uniqueReverse } from './utils'
 
+const deffer = requestAnimationFrame || setTimeout
 let enqueueRender = []
 
 /**
@@ -28,7 +29,7 @@ export const comitQueue = () =>
  */
 const renderHook = context => {
   enqueueRender.push(context)
-  const p = new Promise(setImmediate)
+  const p = new Promise(deffer)
   p.then(comitQueue)
 }
 

@@ -7,18 +7,17 @@ const DOCUMENT_ELEMENT_TYPE = 1
 // with the addition of handling input element
 
 function isEqual (oldNode, newNode) {
-  
-  if (nodeMap.has(newNode)) {
+  if (oldNode.nodeType === DOCUMENT_ELEMENT_TYPE && nodeMap.has(newNode)) {
     const n = nodeMap.get(newNode)
-    const old = nodeMap.get(oldNode)
-    if (old) {
+    const o = nodeMap.get(oldNode)
+    if (o) {
       nodeMap.delete(oldNode)
-      for(const attr in old) {
-        oldNode.removeEventListener(attr, old[attr])
+      for(const i in o) {
+        oldNode.removeEventListener(i, o[i])
       }
     }
-    for (const attr in n) {
-      oldNode.addEventListener(attr, n[attr])
+    for (const i in n) {
+      oldNode.addEventListener(i, n[i])
     }
     nodeMap.set(oldNode, n)
     nodeMap.delete(newNode)
@@ -37,35 +36,31 @@ function arbiter (oldNode, newNode) {
   }
 }
 
-function setAttr (oldNode, newNode) {
-  const oAttr = newNode.attributes
-  const output = {}
-  let i = 0
-  while (i < oAttr.length) {
-    output[oAttr[i].name] = oAttr[i].value
-    i++
+function setAttributes (oldAttributes, newAttributes) {
+  var i, a, b, ns, name
+
+  // Remove old attributes.
+  for (i = oldAttributes.length; i--;) {
+    a = oldAttributes[i]
+    ns = a.namespaceURI
+    name = a.localName
+    b = newAttributes.getNamedItemNS(ns, name)
+    if (!b) oldAttributes.removeNamedItemNS(ns, name)
   }
-  const iAttr = oldNode.attributes
-  const input = {}
-  let j = 0
-  while (j < iAttr.length) {
-    input[iAttr[j].name] = iAttr[j].value
-    j++
-  }
-  for (const attr in output) {
-    if (oldNode.attributes[attr] && oldNode.attributes[attr].name === attr && oldNode.attributes[attr].value !== output[attr]) {
-      oldNode.setAttribute(attr, output[attr])
-    } else {
-      // add new attributes
-      if (!oldNode.hasAttribute(attr)) {
-        oldNode.setAttribute(attr, output[attr])
-      }
-    }
-  }
-  for (const attr in input) {
-    // if attributes does not exist on the new node we removed it from the old node
-    if (newNode.attributes[attr] && oldNode.attributes[attr]) {} else {
-      oldNode.removeAttribute(attr)
+
+  // Set new attributes.
+  for (i = newAttributes.length; i--;) {
+    a = newAttributes[i]
+    ns = a.namespaceURI
+    name = a.localName
+    b = oldAttributes.getNamedItemNS(ns, name)
+    if (!b) {
+      // Add a new attribute.
+      newAttributes.removeNamedItemNS(ns, name)
+      oldAttributes.setNamedItemNS(a)
+    } else if (b.value !== a.value) {
+      // Update existing attribute.
+      b.value = a.value
     }
   }
 }
@@ -75,24 +70,8 @@ function patch (oldNode, newNode) {
     if (oldNode.nodeType === DOCUMENT_ELEMENT_TYPE) {
       if (isEqual(oldNode, newNode)) return
       if (oldNode.nodeName === newNode.nodeName) {
-        // handle eventListener we could use remove/add event listener too
-        // if ((oldNode.hasAttribute('key') && newNode.hasAttribute('key')) || nodeMap.has(newNode)) {
-          // nodeMap.has(newNode) && nodeMap.delete(newNode)
-          // oldNode.parentNode.replaceChild(newNode, oldNode)
-        // } else {
-          setAttr(oldNode, newNode)
-          diff(oldNode.firstChild, newNode.firstChild, oldNode)
-        // }
-        // quick hack, focus element if it last time was focused
-        // if (nodeMap.i.has(oldNode)) {
-        //   nodeMap.i.delete(oldNode)
-        //   // set focus
-        //   newNode.focus()
-        //   // set cursor position
-        //   const val = newNode.value
-        //   newNode.value = ''
-        //   newNode.value = val
-        // }
+        setAttributes(oldNode.attributes, newNode.attributes)
+        diff(oldNode.firstChild, newNode.firstChild, oldNode)
       } else {
         diff(oldNode.firstChild, newNode.firstChild, oldNode)
       }

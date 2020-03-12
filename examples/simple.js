@@ -1,4 +1,4 @@
-import { useState } from 'locomotor'
+import { useState, useEffect } from 'locomotor'
 
 let i = 0
 
@@ -9,7 +9,9 @@ function App (props) {
   i++
   console.log(`${todo} ${i} times!`)
 
-  // console.log(foo)
+  useEffect(() => {
+    console.log(foo)
+  })
 
   const clickFoo = e => {
     console.log(foo)
