@@ -18,6 +18,14 @@ const config = {
   module: {
     rules: [
       {
+        test: /\.(ts$)/,
+        use: [
+          'babel-loader',
+          'ts-loader'
+        ],
+        exclude: /node_modules/,
+      },
+      {
         test: /\.(js|jsx)$/,
         loader: 'babel-loader',
         exclude: /node_modules/
@@ -30,7 +38,7 @@ const config = {
   },
   resolve: {
     modules: ['node_modules'],
-    extensions: ["*", ".js", ".jsx"],
+    extensions: ["*", ".ts", ".js", ".jsx"],
     alias: {
       locomotor: path.resolve(__dirname, './index.js')
     }
@@ -42,7 +50,12 @@ const config = {
       favicon: 'favicon.png',
       template: path.join('view', 'layout.pug')
     }),
-    new webpack.optimize.OccurrenceOrderPlugin()
+    new webpack.optimize.OccurrenceOrderPlugin(),
+    new webpack.DefinePlugin({
+      'process.env': {
+        NODE_ENV: '"development"'
+      }
+    }),
   ],
   devServer: {
     hot: true,

@@ -16,13 +16,19 @@ const traversal = node => {
 }
 
 const morph = (node, update) => {
-  morphdom(node, update, {
+  morphdom(node, update.actualize(document), {
     onNodeAdded: el => {
-      if (el.nodeType === 1 && nodeMap.has(el)) {
-        nodeMap.a.set(el, nodeMap.get(el))
+      console.log(el)
+      if (el.nodeType === 1 && el.hasAttributes('data-key')) {
+        console.log(el.getAttribute('data-key'), nodeMap.get(el.getAttribute('data-key')))
+
+        const ev = nodeMap.get(el.getAttribute('data-key')) || {}
+
+        Object.keys(ev).map(e => el.addEventListener(e, ev[e], false))
       }
     },
     onBeforeElUpdated: (fromEl, toEl) => {
+      console.log(toEl)
       // sane way to handle event listeners
       if (nodeMap.has(toEl)) {
         const n = nodeMap.get(toEl)

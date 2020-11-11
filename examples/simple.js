@@ -1,4 +1,4 @@
-import { useState } from 'locomotor'
+import { L, useState } from 'locomotor'
 
 let i = 0
 
@@ -9,15 +9,17 @@ function App (props) {
   i++
   console.log(`${todo} ${i} times!`)
 
-  const clickFoo = e => {
+  const clickFoo = () => {
+    console.log('click')
     setFoo(foo === 1 ? 0 : 1)
   }
 
   return (
     <div>
-      <button onClick={clickFoo}>
-        {todo}: {foo}
+      <button className={{ foo: 'foo', bar: 'bar' }} onclick={clickFoo} style={{ background: 'red' }}>
+        click
       </button>
+      {foo === 1 ? (<button>foo</button>) : (<L><p>bar</p><button>ber</button></L>)}
     </div>
   )
 }

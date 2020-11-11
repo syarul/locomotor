@@ -22,7 +22,7 @@ export const filter = (arr, cond) => {
   return match
 }
 
-export const isEqual = function (x, y) {
+/* export const isEqual = function (x, y) {
   if (x === y) return true
   // if both x and y are null or undefined and exactly the same
 
@@ -55,4 +55,4 @@ export const isEqual = function (x, y) {
     // allows x[ p ] to be set to undefined
   }
   return true
-}
+} */

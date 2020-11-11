@@ -1,9 +1,9 @@
 import { L as Fragment, useState } from 'locomotor'
 
 function List (props) {
-  const { foobar, todo } = props
+  const { foobar, todo, remove } = props
 
-  console.log(`child ${foobar} is rendered`)
+  // console.log(`child ${foobar} is rendered`)
 
   const [count, setCount] = useState(0)
 
@@ -11,29 +11,49 @@ function List (props) {
     setCount(count + 1)
   }
 
+  // return (
+  //   <button id={foobar} onClick={click}>count : {count} || prop: {foobar} || {todo} </button>
+
+  // )
+
   return (
     <p>
       <button id={foobar} onClick={click}>count : {count} || prop: {foobar} || {todo} </button>
+      <button onClick={remove}>X</button>
     </p>
   )
 }
 
 // this the root App it will get rendered regardless of
 // children status
-function App (props) {
-  const ls = []
 
-  for (let i = 0; i < 5; i++) {
-    ls.push({
-      foobar: 'foo' + i
-    })
+function App (props) {
+  const [ls, setLs] = useState([])
+
+  const remove = i => {
+    const fls = ls.filter(l => l.i !== i)
+    console.log(i, fls)
+    setLs([...fls])
   }
 
-  const ListEl = listProp => (<List {...listProp} {...props} />)
+  const ListEl = listProp => {
+    const { i } = listProp
+    return (<List key={i} {...listProp} {...props} remove={remove.bind(null, i)} />)
+  }
+
+  const click = () => {
+    setLs([...ls, {
+      i: Math.round(Math.random() * 1e17).toString(32),
+      foobar: 'foo' + ls.length
+    }])
+  }
 
   return (
     <Fragment>
-      {ls.map(ListEl)}
+      <button onClick={click}> add list </button>
+      <div>
+        {ls.map(ListEl)}
+      </div>
     </Fragment>
   )
 }

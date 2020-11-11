@@ -2,7 +2,10 @@ import { batchRender } from './renderer'
 import { providerMap, setNode } from './provider'
 import { pocus, dataMap } from 'hookuspocus/src/core'
 import { comitQueue } from './queue'
-import { isEqual, loop, filter } from './utils'
+import { /* isEqual,  */loop, filter } from './utils'
+// import deepmerge from 'deepmerge'
+
+import isEqual from 'deep-equal'
 
 // lifeCycles store
 export const lifeCycles = new (WeakMap || Map)()
@@ -12,6 +15,10 @@ lifeCycles.base = []
 lifeCycles.fn = new (WeakMap || Map)()
 lifeCycles.c = []
 lifeCycles.w = []
+
+// const overwriteMerge = (destinationArray, sourceArray, options) => sourceArray
+
+console.log(dataMap)
 
 const consume = c => c()
 
@@ -42,15 +49,17 @@ const render = (...args) =>
   batchRender(updateVtree.apply(null, args))
 
 export const hydrate = context => {
+  // console.log(dataMap)
   const [rootBaseContext] = lifeCycles.base
   const rootContext = lifeCycles.get(rootBaseContext)[0]
   lifeCycles.c.push(rootContext)
   const ctx = lifeCycles.fn.get(context)
   let node, vtree
   node = pocus([ctx.p], context)
+  // console.log(ctx, node)
   lifeCycles.fn.set(context, {
     ...ctx,
-    n: node
+    n: node // deepmerge(ctx.n, node, { arrayMerge: overwriteMerge })
   })
   const [promises, resolver] = [[], []]
   if (node instanceof Promise) {
@@ -88,7 +97,7 @@ export const hydrate = context => {
   }
 }
 
-export const flattenContext = () => {
+export const invokeCleanup = () => {
   lifeCycles.w.push(lifeCycles.c)
   if (lifeCycles.w.length > 2) {
     lifeCycles.w.shift()
@@ -215,23 +224,61 @@ const createElement = ({ elementName, attributes }) => {
     n: node,
     p: attributes
   })
+
+  // set properties for created element
+  // node._dirty = true
+
   return node
 }
 
+// render node
+//   - render(node)
+//   - reset stack = 0
+//   - if component.hooks -> 
+//       - pendingEffects run cleanup
+//       - pendingEffects run invoke
+//       - pendingEffects clear
+
+// patch node
+//   - if oldnode -> oldNode(node)
+//   - pendingEffects -> renderDiffer -> run effects
+
+
+// commitToRenderQueue ??
+
+// unmountFrom
+//   - unmount(node)
+//   - pendingEffects run cleanup
+
 export const walk = node => {
-  if (node instanceof Promise) {
+  if (typeof node !== 'object' || node == null) {
+    return Promise.resolve(node)
+  } else if (node instanceof Promise) {
     return node.then(walk)
+  } else if (node.constructor === Array) {
+    // let i = 0;
+    // const len = node.length;
+    // let nodeArrays = [];
+    // while (i < len) {
+    //   nodeArrays.push(
+    //     walk(node[i])
+    //   )
+    //   i++
+    // }
+    // return Promise.all(nodeArrays)
+    return Promise.all(node.map(walk))
   } else {
-    const { elementName, children } = node
-    if (typeof elementName === 'function') {
-      return createElement(node)
+    if (typeof node.elementName === 'function') {
+      return Promise.resolve(createElement(node))
     }
-    if (children && children.length) {
-      return {
-        ...node,
-        children: loop(children, walk)
-      }
-    }
-    return node
+    return Promise.all([
+      node.elementName,
+      node.attributes,
+      walk(node.children)
+    ]).then(([elementName, attributes, children]) => ({
+      elementName,
+      attributes,
+      children
+    }))
   }
 }

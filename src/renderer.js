@@ -1,8 +1,10 @@
-import 'regenerator-runtime/runtime'
-import co from 'co'
-import morph from './morph'
-import { lifeCyclesRunReset, flattenContext } from './walk'
-import { loop } from './utils'
+// import morph from './morph'
+import { lifeCyclesRunReset, invokeCleanup } from './walk'
+// import { loop } from './utils'
+
+// import { createElement, createText, createAttributes, createDocumentFragment } from 'marko-vdom'
+
+import patch from './patcher'
 
 function camelCase (s, o) {
   return `${s.replace(/([A-Z]+)/g, '-$1').toLowerCase()}:${o[s]};`
@@ -16,20 +18,16 @@ function styleToStr (obj) {
   return style
 }
 
-function classes (el, attr, value) {
+function classes (el, value) {
   if (typeof value === 'object') {
-    const str = []
-    for (const i in value) {
-      str.push(value[i])
-    }
-    el.setAttribute('class', str.join(' '))
+    el.setAttribute('class', Object.keys(value).map(i => value[i]).join(' '))
   } else {
     el.setAttribute('class', value)
   }
 }
 
-let nodeMap = new (WeakMap || Map)()
-nodeMap.a = new (WeakMap || Map)()
+const nodeMap = new (WeakMap || Map)()
+// nodeMap.a = new (WeakMap || Map)()
 
 function evt (el, attr, value) {
   attr = attr.replace(/^on/, '').toLowerCase()
@@ -37,9 +35,9 @@ function evt (el, attr, value) {
   const cur = nodeMap.get(el) || {}
 
   // react like onChange handler
-  if (attr === 'change') {
-    el.addEventListener('keyup', value)
-    el.addEventListener('blur', value)
+  if (el.nodeName === 'INPUT' && attr === 'change') {
+    el.addEventListener('keyup', value, false)
+    el.addEventListener('blur', value, false)
 
     nodeMap.set(el, {
       ...cur,
@@ -51,7 +49,7 @@ function evt (el, attr, value) {
   }
 
   // initial event handler
-  el.addEventListener(attr, value)
+  el.addEventListener(attr, value, false)
 
   // on subsequent run we patch the node through WeakMap
   nodeMap.set(el, {
@@ -62,15 +60,21 @@ function evt (el, attr, value) {
 
 function parseAttr (el, attr, value) {
   if (typeof value === 'function' && attr.match(/^on/)) {
-    return evt.apply(null, arguments)
+    evt.apply(null, arguments)
   } else if (attr === 'className' || attr === 'class') {
-    return classes.apply(null, arguments)
+    classes(el, value)
   } else if (attr === 'style' && typeof value === 'object') {
-    return el.setAttribute(attr, styleToStr(value))
+    el.setAttribute(attr, styleToStr(value))
+  } else if (attr === 'value') {
+    el.value = value
   } else if (typeof value === 'boolean') {
-    return value && el.setAttribute(attr, '')
+    const types = ['checked', 'selected', 'disabled'].includes(attr)
+    if (types) {
+      el[attr] = !!value
+    }
+    value && el.setAttribute(attr, '')
   } else {
-    return el.setAttribute(attr, value)
+    el.setAttribute(attr, value)
   }
 }
 
@@ -82,63 +86,75 @@ const createEl = (vtree, fragment) => {
   let node = null
   if (typeof vtree === 'object') {
     if (Array.isArray(vtree)) {
-      loop(vtree, createFrom)
+      vtree.map(createFrom)
     } else {
       // handle fragment
       if (elementName === 'Locomotor.Fragment') {
-        loop(children, createFrom)
+        children.map(createFrom)
       // handle provider
       } else if (elementName.match(/Locomotor.Provider./)) {
-        loop(children, createFrom)
+        children.map(createFrom)
       } else {
         node = document.createElement(elementName)
-        loop(Object.keys(attributes), attr => parseAttr(node, attr, attributes[attr]))
+        Object.keys(attributes).map(attr => parseAttr(node, attr, attributes[attr]))
+        // loop(Object.keys(attributes), attr => parseAttr(node, attr, attributes[attr]))
       }
     }
   } else {
     node = document.createTextNode(vtree)
   }
   if (children && children.length) {
-    loop(children, child => createEl(child, node))
+    children.map(child => createEl(child, node))
   }
   node && fragment.appendChild(node)
   return fragment
 }
 
 // resolve all promises in vtree object
-// using co since it's more compact compare to core-js
-const resolveVtree = vtree =>
-  co.wrap(function * () {
-    if (vtree instanceof Promise) {
-      vtree = yield Promise.resolve(vtree)
-      return yield resolveVtree(vtree)
-    } else if (Array.isArray(vtree)) {
-      return yield loop(vtree, resolveVtree)
-    } else if (typeof vtree !== 'object') {
-      return vtree
-    } else {
-      let { elementName, children } = vtree
-      if (elementName instanceof Promise) {
-        elementName = yield Promise.resolve(elementName)
-      }
-      children = yield loop((children || []), resolveVtree)
-      return {
-        ...vtree,
-        elementName,
-        children
-      }
-    }
-  })(true)
+// thanks to @Bergi https://stackoverflow.com/users/1048572/bergi for the help
+/* function resolveVtree (vtree) {
+  if (typeof vtree !== 'object' || vtree == null) {
+    return Promise.resolve(vtree)
+  } else if (vtree instanceof Promise) {
+    return vtree.then(resolveVtree)
+  } else if (Array.isArray(vtree)) {
+    return Promise.all(vtree.map(resolveVtree))
+  } else {
+    return Promise.all([
+      vtree.elementName,
+      resolveVtree(vtree.children)
+    ]).then(([elementName, children]) => ({
+      ...vtree,
+      elementName,
+      children
+    }))
+  }
+} */
+
+let intv
+
+let fn = []
+
+const act = (run, clear) => {
+  if (typeof run === 'function') {
+    fn.push(run)
+  }
+  if (clear) fn = []
+}
 
 class Renderer {
   render (vtree, rootNode) {
-    resolveVtree(vtree).then(vtree => {
-      flattenContext()
-      this.r = rootNode
-      const node = createEl(vtree)
-      morph(this.r, node)
-      this.emit('init', vtree)
-    })
+    this.r = rootNode
+    vtree instanceof Promise ? vtree.then(v => {
+      console.log(v)
+      this.paint('init', v)
+    }) : this.paint('init', vtree)
+  }
+
+  paint(step, vtree) {
+    // invokeCleanup()
+    patch(this.r, vtree)
+    this.emit(step, vtree)
   }
 
   deffer () {
@@ -146,21 +162,19 @@ class Renderer {
   }
 
   emit (lifecycle) {
-    this.deffer().then(() =>
+    this.deffer().then(() => {
       lifeCyclesRunReset(lifecycle)
-    )
+
+      clearTimeout(intv)
+      intv = setTimeout(() => {
+        fn.map(f => f())
+      }, 100)
+    })
   }
 
   on (vtree) {
-    resolveVtree(vtree).then(vtree => {
-      flattenContext()
-      const a = nodeMap.a
-      nodeMap = new (WeakMap || Map)()
-      nodeMap.a = a
-      const node = createEl(vtree)
-      morph(this.r, node)
-      this.emit('update', vtree)
-    })
+    console.log(vtree)
+    this.paint('update', vtree)
   }
 }
 
@@ -171,5 +185,8 @@ const batchRender = vtree => locoDOM.on(vtree)
 export {
   locoDOM as default,
   nodeMap,
-  batchRender
+  batchRender,
+  createEl,
+  parseAttr,
+  act
 }

@@ -9,7 +9,7 @@ const config = {
   entry: './index',
   output: {
     path: path.resolve(__dirname),
-    filename: 'locomotor-min.js',
+    filename: 'dist/locomotor.js',
     library: 'locomotor',
     libraryTarget: 'umd'
   },
