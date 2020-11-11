@@ -142,26 +142,27 @@ const act = (run, clear) => {
   if (clear) fn = []
 }
 
-class Renderer {
-  render (vtree, rootNode) {
+const locoDOM = {
+  r: null,
+  render: function(vtree, rootNode) {
     this.r = rootNode
     vtree instanceof Promise ? vtree.then(v => {
       console.log(v)
       this.paint('init', v)
     }) : this.paint('init', vtree)
-  }
+  },
 
-  paint(step, vtree) {
-    // invokeCleanup()
+  paint: function(step, vtree) {
+    invokeCleanup()
     patch(this.r, vtree)
     this.emit(step, vtree)
-  }
+  },
 
-  deffer () {
+  deffer: function() {
     return new Promise(resolve => resolve(this.r))
-  }
+  },
 
-  emit (lifecycle) {
+  emit: function(lifecycle) {
     this.deffer().then(() => {
       lifeCyclesRunReset(lifecycle)
 
@@ -170,15 +171,12 @@ class Renderer {
         fn.map(f => f())
       }, 100)
     })
-  }
+  },
 
-  on (vtree) {
-    console.log(vtree)
+  on: function(vtree) {
     this.paint('update', vtree)
   }
 }
-
-const locoDOM = new Renderer()
 
 const batchRender = vtree => locoDOM.on(vtree)
 

@@ -256,17 +256,17 @@ export const walk = node => {
   } else if (node instanceof Promise) {
     return node.then(walk)
   } else if (node.constructor === Array) {
-    // let i = 0;
-    // const len = node.length;
-    // let nodeArrays = [];
-    // while (i < len) {
-    //   nodeArrays.push(
-    //     walk(node[i])
-    //   )
-    //   i++
-    // }
-    // return Promise.all(nodeArrays)
-    return Promise.all(node.map(walk))
+    let i = 0;
+    const len = node.length;
+    let nodeArrays = [];
+    while (i < len) {
+      nodeArrays.push(
+        walk(node[i])
+      )
+      i++
+    }
+    return Promise.all(nodeArrays)
+    // return Promise.all(node.map(walk))
   } else {
     if (typeof node.elementName === 'function') {
       return Promise.resolve(createElement(node))
