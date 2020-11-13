@@ -1,9 +1,15 @@
 {
+    "files": [
+        "./src/foo.ts"
+    ],
     "compilerOptions": {
         "module": "commonjs",
         "target": "ESNext",
-        "jsx": "react",
-        "sourceMap": true
+        "sourceMap": true,
+        "typeRoots": [
+            "./src/types"
+        ],
+        "allowJs": true
     },
     "exclude": [
         "node_modules",

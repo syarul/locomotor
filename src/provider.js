@@ -1,6 +1,6 @@
-import { hookus } from 'hookuspocus/src/core'
-import { useReducer } from 'hookuspocus/src/use_reducer'
-// import { hookus, useReducer } from 'hookuspocus/dist/hookuspocus'
+// import { hookus } from 'hookuspocus/src/core'
+// import { useReducer } from 'hookuspocus/src/use_reducer'
+import { hookus, useReducer } from 'hookuspocus/dist/hookuspocus'
 
 export const providerMap = new (WeakMap || Map)()
 providerMap.h = []

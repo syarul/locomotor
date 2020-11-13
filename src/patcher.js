@@ -176,6 +176,4 @@ function dompatcher (DOMnode, VDOMnode) {
   diff(DOMnode, VDOMnode)
 }
 
-export {
-  dompatcher as default
-}
+export default dompatcher

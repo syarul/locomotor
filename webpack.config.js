@@ -28,6 +28,10 @@ const config = {
       {
         test: /\.(js|jsx)$/,
         loader: 'babel-loader',
+        // use: [
+        //   'babel-loader',
+        //   'ts-loader'
+        // ],
         exclude: /node_modules/
       },
       {

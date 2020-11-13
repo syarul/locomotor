@@ -1,5 +1,5 @@
 // import morph from './morph'
-import { lifeCyclesRunReset, invokeCleanup } from './walk'
+import { getCurrentStack } from './walk'
 // import { loop } from './utils'
 
 // import { createElement, createText, createAttributes, createDocumentFragment } from 'marko-vdom'
@@ -100,6 +100,9 @@ const createEl = (vtree, fragment) => {
         // loop(Object.keys(attributes), attr => parseAttr(node, attr, attributes[attr]))
       }
     }
+    if (vtree.context) {
+      setStackListener(vtree, node)
+    }
   } else {
     node = document.createTextNode(vtree)
   }
@@ -110,81 +113,26 @@ const createEl = (vtree, fragment) => {
   return fragment
 }
 
-// resolve all promises in vtree object
-// thanks to @Bergi https://stackoverflow.com/users/1048572/bergi for the help
-/* function resolveVtree (vtree) {
-  if (typeof vtree !== 'object' || vtree == null) {
-    return Promise.resolve(vtree)
-  } else if (vtree instanceof Promise) {
-    return vtree.then(resolveVtree)
-  } else if (Array.isArray(vtree)) {
-    return Promise.all(vtree.map(resolveVtree))
-  } else {
-    return Promise.all([
-      vtree.elementName,
-      resolveVtree(vtree.children)
-    ]).then(([elementName, children]) => ({
-      ...vtree,
-      elementName,
-      children
-    }))
-  }
-} */
-
-let intv
-
-let fn = []
-
-const act = (run, clear) => {
-  if (typeof run === 'function') {
-    fn.push(run)
-  }
-  if (clear) fn = []
+const setStackListener = (vtree, node) => {
+  const { currentStack } = getCurrentStack(vtree.context, node) || {}
+  const { _eventStackKey, _patchDOMnode } = currentStack
+  _eventStackKey && _patchDOMnode && node.addEventListener(_eventStackKey, _patchDOMnode, false)
 }
 
 const locoDOM = {
   r: null,
-  render: function(vtree, rootNode) {
+  render: function (vtree, rootNode) {
     this.r = rootNode
     vtree instanceof Promise ? vtree.then(v => {
-      console.log(v)
-      this.paint('init', v)
-    }) : this.paint('init', vtree)
-  },
-
-  paint: function(step, vtree) {
-    invokeCleanup()
-    patch(this.r, vtree)
-    this.emit(step, vtree)
-  },
-
-  deffer: function() {
-    return new Promise(resolve => resolve(this.r))
-  },
-
-  emit: function(lifecycle) {
-    this.deffer().then(() => {
-      lifeCyclesRunReset(lifecycle)
-
-      clearTimeout(intv)
-      intv = setTimeout(() => {
-        fn.map(f => f())
-      }, 100)
-    })
-  },
-
-  on: function(vtree) {
-    this.paint('update', vtree)
+      setStackListener(v, this.r)
+      patch(this.r, v)
+    }) : patch(this.r, vtree)
   }
 }
-
-const batchRender = vtree => locoDOM.on(vtree)
 
 export {
   locoDOM as default,
   nodeMap,
-  batchRender,
   createEl,
-  parseAttr,
-  act
+  parseAttr
 }

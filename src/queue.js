@@ -1,4 +1,5 @@
-import { onStateChanged } from 'hookuspocus/src/on'
+// import { onStateChanged } from 'hookuspocus/src/on'
+import { onStateChanged } from 'hookuspocus/dist/hookuspocus'
 import { hydrate } from './walk'
 import { uniqueReverse } from './utils'
 

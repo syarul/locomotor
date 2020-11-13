@@ -1,10 +1,15 @@
-import { useState } from 'locomotor'
+import { useState, act } from 'locomotor'
 
 function App () {
-  const [foo] = useState('foobar')
+  const [foo, setFoo] = useState('foo')
   return (
-    <div>{foo}</div>
+    <div>
+      <button onClick={() => setFoo('bar')}>change</button>
+      {foo}
+    </div>
   )
 }
+
+act(() => console.log(1))
 
 export default App

@@ -118,5 +118,6 @@ test('setState from event click', done => {
     el = container
     const button = queryByTestId(tagButton)
     button.click()
+    done()
   })
 })

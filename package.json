@@ -12,7 +12,7 @@
     "build": "microbundle",
     "__postbundle": "uglifyjs dist/locomotor.js --pure-funcs classCallCheck -c unsafe,collapse_vars,evaluate,loops,keep_fargs=false,pure_getters,unused,dead_code,warnings -m -o dist/locomotor.js --source-map url='https://unpkg.com/locomotor@0.1.13/locomotor.js.map'",
     "dev": "microbundle watch",
-    "bundle": "webpack --config webpack.bundle.js",
+    "bundle": "webpack --config webpack.bundle.js --mode production",
     "pretest": "standard test/**/*.js --fix",
     "test": "jest",
     "lint": "standard locomotor.js src/**/*.js examples/**/*.js --fix",

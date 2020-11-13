@@ -1,4 +1,4 @@
-import { L as Fragment, useState } from 'locomotor'
+import { L as Fragment, useState, act } from 'locomotor'
 
 function List (props) {
   const { foobar, todo, remove } = props
@@ -27,23 +27,32 @@ function List (props) {
 // this the root App it will get rendered regardless of
 // children status
 
+const _ls = []
+
+// for (let i = 0; i < 5; i++) {
+//   _ls.push({
+//     key: Math.round(Math.random() * 1e17).toString(32),
+//     foobar: 'foo' + i
+//   })
+// }
+
 function App (props) {
-  const [ls, setLs] = useState([])
+  const [ls, setLs] = useState(_ls)
 
   const remove = i => {
-    const fls = ls.filter(l => l.i !== i)
-    console.log(i, fls)
+    const fls = ls.filter(l => l.key !== i)
+    // console.log(i, fls)
     setLs([...fls])
   }
 
   const ListEl = listProp => {
-    const { i } = listProp
-    return (<List key={i} {...listProp} {...props} remove={remove.bind(null, i)} />)
+    const { key } = listProp
+    return (<List key={key} {...listProp} {...props} remove={remove.bind(null, key)} />)
   }
 
   const click = () => {
     setLs([...ls, {
-      i: Math.round(Math.random() * 1e17).toString(32),
+      key: Math.round(Math.random() * 1e17).toString(32),
       foobar: 'foo' + ls.length
     }])
   }
@@ -57,6 +66,10 @@ function App (props) {
     </Fragment>
   )
 }
+
+act(() => {
+  console.log('fo')
+})
 
 // setTimeout(() => {
 //   setInterval(() => {
