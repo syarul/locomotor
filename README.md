@@ -1,6 +1,6 @@
 # locomotor v0.1.13
 
-[![npm package](https://img.shields.io/badge/npm-0.1.13-blue.svg)](https://www.npmjs.com/package/locomotor) [![browser build](https://img.shields.io/badge/unpkg-0.1.13-ff69b4.svg)](https://unpkg.com/locomotor@0.1.13/locomotor-min.js)
+[![npm package](https://img.shields.io/badge/npm-0.1.13-blue.svg)](https://www.npmjs.com/package/locomotor) [![browser build](https://img.shields.io/badge/unpkg-0.1.13-ff69b4.svg)](https://unpkg.com/locomotor@0.1.13/locomotor-min.js)[![Build Status](https://travis-ci.org/syarul/locomotor.svg?branch=v2)](https://travis-ci.org/syarul/locomotor)
 
 A React like hook without lingo
 
