@@ -17,7 +17,7 @@ function List (props) {
   // )
 
   return (
-    <p>
+    <p key={props.key}>
       <button id={foobar} onClick={click}>count : {count} || prop: {foobar} || {todo} </button>
       <button onClick={remove}>X</button>
     </p>
@@ -52,7 +52,7 @@ function App (props) {
 
   const click = () => {
     setLs([...ls, {
-      key: Math.round(Math.random() * 1e17).toString(32),
+      key: (ls.length ? parseInt(ls[ls.length - 1].key) + 1 : 0).toString(),//Math.round(Math.random() * 1e17).toString(32),
       foobar: 'foo' + ls.length
     }])
   }
@@ -68,7 +68,7 @@ function App (props) {
 }
 
 act(() => {
-  console.log('fo')
+  // console.log('fo')
 })
 
 // setTimeout(() => {

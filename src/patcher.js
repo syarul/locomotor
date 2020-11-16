@@ -61,6 +61,50 @@ function setAttributes (oldAttributes, newAttributes) {
   }
 } */
 
+/**
+ * Dispatches a mount event for the given node and children.
+ *
+ * @param {Node} node - the node to mount.
+ * @return {node}
+ */
+function mount(node) {
+  return dispatch(node, 'mount')
+}
+
+/**
+ * Dispatches a dismount event for the given node and children.
+ *
+ * @param {Node} node - the node to dismount.
+ * @return {node}
+ */
+function dismount(node) {
+  return dispatch(node, 'dismount')
+}
+
+/**
+ * Recursively trigger an event for a node and it's children.
+ * Only emits events for keyed nodes.
+ *
+ * @param {Node} node - the initial node.
+ * @return {Node}
+ */
+function dispatch(node, type) {
+  // Trigger event for this element if it has a key.
+  if (getKey(node)) {
+    var ev = document.createEvent('Event')
+    var prop = { value: node }
+    ev.initEvent(type, false, false)
+    Object.defineProperty(ev, 'target', prop)
+    Object.defineProperty(ev, 'srcElement', prop)
+    node.dispatchEvent(ev)
+  }
+
+  // Dispatch to all children.
+  var child = node.firstChild
+  while (child) child = dispatch(child, type).nextSibling
+  return node
+}
+
 const nodeStore = new (WeakMap || Map)()
 
 function patch (DOMnode, VDOMnode) {
@@ -74,19 +118,25 @@ function patch (DOMnode, VDOMnode) {
       }
 
       if (DOMnode.nodeType === DOCUMENT_ELEMENT_TYPE) {
-        // if (isEqual(DOMnode, VDOMnode)) return
+        if(VDOMnode.render) {
+          // console.log(DOMnode.isEqualNode(VDOMnode.render))
+          // if (DOMnode.isEqualNode(VDOMnode.render)) return
+        }
         if (DOMnode.nodeName === elementName.toUpperCase()) {
+
           Object.keys(attributes || {}).map(attr => {
-            if (typeof attributes[attr] === 'function') {
-              const ev = attr.replace(/^on/, '').toLowerCase()
+            // if (typeof attributes[attr] === 'function') {
+              // const ev = attr.replace(/^on/, '').toLowerCase()
+
+
               // onChange workaround for input keys event capturing
-              if (DOMnode.nodeName === 'INPUT' && ev === 'change') {
-                DOMnode.removeEventListener('keyup', (nodeMap.get(DOMnode) || {}).keyup, false)
-                DOMnode.removeEventListener('blur', (nodeMap.get(DOMnode) || {}).blur, false)
-              } else {
-                DOMnode.removeEventListener(ev, (nodeMap.get(DOMnode) || {})[ev], false)
-              }
-            }
+              // if (DOMnode.nodeName === 'INPUT' && ev === 'change') {
+              //   DOMnode.removeEventListener('keyup', (nodeMap.get(DOMnode) || {}).keyup, false)
+              //   DOMnode.removeEventListener('blur', (nodeMap.get(DOMnode) || {}).blur, false)
+              // } else {
+              //   DOMnode.removeEventListener(ev, (nodeMap.get(DOMnode) || {})[ev], false)
+              // }
+            // }
             parseAttr(DOMnode, attr, attributes[attr])
           })
 
@@ -110,7 +160,14 @@ function patch (DOMnode, VDOMnode) {
   }
 }
 
-function getIndex (store, count) {
+function getIndex (store, count, key) {
+  if(key !== undefined) {
+    const index = store.findIndex(n => n && n.attributes && n.attributes[key])
+    if(!~index) {
+      return store.length - count - 1
+    }
+    return index
+  }
   return store.length - count - 1
 }
 
@@ -121,6 +178,17 @@ function addExtra (count, oldParentNode, newStore) {
     index = getIndex(newStore, count)
     oldParentNode.appendChild(createEl(newStore[index]))
   }
+}
+
+function getKey (node) {
+  return node.nodeType === DOCUMENT_ELEMENT_TYPE && node.getAttribute('key')
+  // if(!key) return false
+  // const target = store.find(n => n && n.attributes[key])
+  // return target
+}
+
+function getKeyFromVtree(store) {
+  return store && store.attributes && store.attributes['key']
 }
 
 let checkOld
@@ -143,12 +211,47 @@ function diff (oldParentNode, newParentNode, isFragment) {
       checkOld = DOMnode
       DOMnode = DOMnode.nextSibling
       index = getIndex(newStore, count)
+      getKey(checkOld) && console.log(checkOld, newStore)
       if (checkOld && (newStore[index] !== undefined)) {
         if (Array.isArray(newStore[index])) {
           // exit when it's a list
           return diff(oldParentNode, { children: newStore[index] })
         } else {
-          patch(checkOld, newStore[index])
+          const oldKey = getKey(checkOld)
+          // console.log(oldParentNode)
+          if (!!oldKey) {
+            const currentKey = getKeyFromVtree(newStore[index])
+            // if checkOld key === vtree[index] attributes.key
+            // --> ignore
+            // if checkOld key !== vtree[index] attributes.key
+            // --> find in from parentNode if exist and move here
+            // then diff
+
+            console.log(oldKey, currentKey)
+            if (oldKey === currentKey) {
+            //   // skip
+            } else if (oldKey !== currentKey) {
+              const checkNew = checkOld.parentNode.querySelector(`[key="${currentKey}"]`)
+              console.log(checkNew)
+            //   // console.log(checkNew)
+            //   if(checkNew) {
+            //     // console.log('do', oldKey, currentKey)
+            //     checkOld.parentNode.insertBefore(checkNew, checkOld)
+            //     // mount(checkNew)
+            //   } else {
+            //     patch(checkOld, newStore[index])
+            //   }
+              // checkNew.parentNode.insertBefore(checkNew, checkOld)
+              // mount(checkNew)
+            } else {
+            //   // fallback
+              // patch(checkOld, newStore[index])
+            }
+            patch(checkOld, newStore[index])
+          } else {
+            !!oldKey && console.log(oldKey)
+            patch(checkOld, newStore[index])
+          }
         }
       } else if (checkOld && (newStore[index] === undefined)) {
         if (nodeMap.has(checkOld)) {

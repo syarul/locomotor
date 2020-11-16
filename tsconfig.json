@@ -1,7 +1,4 @@
 {
-    "files": [
-        "./src/foo.ts"
-    ],
     "compilerOptions": {
         "module": "commonjs",
         "target": "ESNext",

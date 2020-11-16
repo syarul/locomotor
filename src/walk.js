@@ -1,37 +1,23 @@
 /* global Event */
 import patch from './patcher'
-import { providerMap, setNode } from './provider'
+import { setNode } from './provider'
 // import { pocus, dataMap } from 'hookuspocus/src/core'
 import { pocus, dataMap } from 'hookuspocus/dist/hookuspocus'
-import { comitQueue } from './queue'
-import { /* isEqual,  */loop, filter } from './utils'
-// import deepmerge from 'deepmerge'
+import './queue'
+import { uuid } from './utils'
 
 import isEqual from 'deep-equal'
-
-// lifeCycles store
-export const lifeCycles = new (WeakMap || Map)()
-lifeCycles.gen = new (WeakMap || Map)()
-lifeCycles.stack = new (WeakMap || Map)()
-lifeCycles.base = []
-lifeCycles.fn = new (WeakMap || Map)()
-lifeCycles.c = []
-lifeCycles.w = []
 
 export const vtreeDataMap = new (WeakMap || Map)()
 vtreeDataMap.__contexts = new (WeakMap || Map)()
 
-/** @typedef {number} Number */
-
-/** @typedef {Function} Functor */
-
-/** @typedef {Object} Obj */
-
 /** @type {Promise} */
 let currentNode
 
-/** @type {Number} */
+/** @type {number} */
 let interval
+
+/** @typedef {import('./').Stack} Stack */
 
 /** @type {import('./').Subscribers} */
 let subscribers = []
@@ -51,7 +37,10 @@ export const getCurrentStack = (context, node) => {
   // get actual vtree dataMap generated from this unbound context
   const ctx = vtreeDataMap.get(unboundContext)
 
-  // console.log(ctx._hookStacks)
+  if (!ctx) {
+    return false
+  }
+
   // lookup for the the current stack
   for (const stack in ctx._hookStacks) {
     const { _component } = ctx._hookStacks[stack]
@@ -83,13 +72,14 @@ const diffVNode = (oldNode, newNode) => {
       unboundContext
     } = getCurrentStack(oldNode.context) || {}
 
+    if(!ctx) return
+
     delete ctx._hookStacks[stack]
 
     vtreeDataMap.set(unboundContext, ctx)
 
     vtreeDataMap.__contexts.delete(oldNode.context)
 
-    // console.log(vtreeDataMap)
   }
 
   if (oldNode.constructor === Array) {
@@ -125,56 +115,9 @@ export const hydrate = context => {
 
   _domNode && _domNode.dispatchEvent(_event)
 
-  Promise.all([_node, currentNode]).then(([oldNode, newNode]) =>
-    diffVNode(oldNode, newNode)
-  )
-}
-
-export const lifecyclesCleanup = vtree => {
-  // console.log(vtree)
-}
-
-// reset stacks once render done also do house
-// cleaning of unused context generations in
-// in lifecycle stores
-export const lifeCyclesRunReset = lifecycle => {
-  // retrieved active contexts
-  const activeContexts = lifeCycles.w[1]
-  // filter out unused contexs
-  if (lifeCycles.w.length === 2) {
-    const oldContexts = lifeCycles.w[0]
-    const removals = filter(oldContexts, ctx => !~activeContexts.findIndex(c => c === ctx))
-    removals.forEach(ctx => {
-      // cleanup dataMap
-      dataMap.delete(ctx)
-      const index = lifeCycles.gen.get(ctx)
-      const fn = lifeCycles.base[index]
-      if (fn) {
-        const eStack = lifeCycles.get(fn) || {}
-        for (const i in eStack) {
-          (eStack[i] === ctx) && delete eStack[i]
-        }
-        lifeCycles.set(fn, eStack)
-        lifeCycles.gen.delete(ctx)
-        lifeCycles.fn.delete(ctx)
-      }
-    })
-  }
-
-  loop(lifeCycles.base, context => {
-    const stack = lifeCycles.stack.get(context)
-    if (stack !== undefined) {
-      lifeCycles.stack.set(context, 0)
-    }
-  })
-  lifeCycles.stage = lifecycle
-  // reset provider stack
-  providerMap.s = 0
-  // consume providers
-  loop(providerMap.c, consume)
-  // reset providers consumers
-  providerMap.c = []
-  comitQueue()
+  // Promise.all([_node, currentNode]).then(([oldNode, newNode]) =>
+  //   diffVNode(oldNode, newNode)
+  // )
 }
 
 /**
@@ -183,8 +126,8 @@ export const lifeCyclesRunReset = lifecycle => {
  * to retrieve it again on each cycle generation,
  * due to certain context may get removed we also
  * need to do cleanup upon each cycles
- * @param {Obj} component
- * @param {Obj} props
+ * @param {Function} component
+ * @param {object} props
  */
 const createComponent = (component, props) => {
   const componentData = vtreeDataMap.get(component) || {
@@ -204,7 +147,7 @@ const createComponent = (component, props) => {
     // assign default index `0` on 1st generation
     0
 
-  const eventStackKey = '__ev_key_' + Math.round(Math.random() * 1e12).toString(32)
+  const eventStackKey = uuid()
 
   const currentStack = componentData._hookStacks[stackIndex] || {
     _index: stackIndex,
@@ -232,27 +175,6 @@ const createComponent = (component, props) => {
   // will not get duplicated
   key === undefined && (componentData._stackCurrentIndex = stackIndex + 1)
 
-  // const genIndex = componentData._hookGenerations.indexOf(component)
-
-  // const currentGeneration =
-  //   vtreeDataMap.__stackGenerations.get(currentStack) || {}
-
-  // if (!~genIndex) {
-  //   // store all reference in a bookkeeping array
-  //   componentData._hookGenerations.push(component)
-  //   // reference of the original generations index
-  //   currentGeneration._index = componentData._hookGenerations.length - 1
-  //   vtreeDataMap.__stackGenerations.set(
-  //     currentStack, currentGeneration
-  //   )
-  // } else {
-  //   // if reference already bookkept we used that instead
-  //   currentGeneration._index = genIndex
-  //   vtreeDataMap.__stackGenerations.set(
-  //     currentStack, currentGeneration
-  //   )
-  // }
-
   vtreeDataMap.set(component, componentData)
 
   vtreeDataMap.__contexts.set(currentStack._component, component)
@@ -261,8 +183,8 @@ const createComponent = (component, props) => {
 }
 
 /**
- * @param {Functor} unboundComponent
- * @param {Number | String} stackIndex
+ * @param {function} unboundComponent
+ * @param {Stack} stackIndex
  * @param {object} newProps
  */
 const updateComponent = (unboundComponent, stackIndex, newProps) => {
@@ -273,9 +195,6 @@ const updateComponent = (unboundComponent, stackIndex, newProps) => {
   for (const i in newProps) {
     componentStack[i] = newProps[i]
   }
-
-  // componentStack._node = node
-  // componentStack._props = attributes
 
   vcomponent._hookStacks[stackIndex] = componentStack
 
@@ -359,17 +278,15 @@ export const walk = node => {
       node.elementName,
       node.attributes,
       walk(node.children),
-      node.context ? node.context : null
-    ]).then(([elementName, attributes, children, context]) => {
-      return context ? {
+      node.context ? node.context : null,
+      node.render ? node.render : null
+    ]).then(([elementName, attributes, children, context, render]) => {
+      return {
         elementName,
         attributes,
         children,
-        context
-      } : {
-        elementName,
-        attributes,
-        children
+        context,
+        render
       }
     })
   }

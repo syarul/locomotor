@@ -1,6 +1,8 @@
-export type Subscribers = Array<Function>;
+export type Subscribers = Array<any>;
 
-export type Func = (arg: Function, clear: Boolean) => void;
+export type Func = (arg: any, clear?: boolean) => void;
+
+export type Stack = number | string
 
 // type Nullable<T> = T | null;
 

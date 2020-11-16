@@ -1,8 +1,4 @@
-// import morph from './morph'
 import { getCurrentStack } from './walk'
-// import { loop } from './utils'
-
-// import { createElement, createText, createAttributes, createDocumentFragment } from 'marko-vdom'
 
 import patch from './patcher'
 
@@ -27,7 +23,6 @@ function classes (el, value) {
 }
 
 const nodeMap = new (WeakMap || Map)()
-// nodeMap.a = new (WeakMap || Map)()
 
 function evt (el, attr, value) {
   attr = attr.replace(/^on/, '').toLowerCase()
@@ -36,26 +31,30 @@ function evt (el, attr, value) {
 
   // react like onChange handler
   if (el.nodeName === 'INPUT' && attr === 'change') {
-    el.addEventListener('keyup', value, false)
-    el.addEventListener('blur', value, false)
+    cur['keyup'] !== value && el.addEventListener('keyup', value, false)
+    cur['blur'] !== value && el.addEventListener('blur', value, false)
 
-    nodeMap.set(el, {
-      ...cur,
-      keyup: value,
-      blur: value
-    })
+    if (cur['keyup'] !== value || cur['blur'] !== value) {
+      nodeMap.set(el, {
+        ...cur,
+        keyup: value,
+        blur: value
+      })
+    }
 
     return false
   }
 
   // initial event handler
-  el.addEventListener(attr, value, false)
+  cur[attr] !== value && el.addEventListener(attr, value, false)
 
   // on subsequent run we patch the node through WeakMap
-  nodeMap.set(el, {
-    ...cur,
-    [attr]: value
-  })
+  if (cur[attr] !== value ) {
+    nodeMap.set(el, {
+      ...cur,
+      [attr]: value
+    })
+  }
 }
 
 function parseAttr (el, attr, value) {
@@ -97,7 +96,6 @@ const createEl = (vtree, fragment) => {
       } else {
         node = document.createElement(elementName)
         Object.keys(attributes).map(attr => parseAttr(node, attr, attributes[attr]))
-        // loop(Object.keys(attributes), attr => parseAttr(node, attr, attributes[attr]))
       }
     }
     if (vtree.context) {
@@ -116,7 +114,7 @@ const createEl = (vtree, fragment) => {
 const setStackListener = (vtree, node) => {
   const { currentStack } = getCurrentStack(vtree.context, node) || {}
   const { _eventStackKey, _patchDOMnode } = currentStack
-  _eventStackKey && _patchDOMnode && node.addEventListener(_eventStackKey, _patchDOMnode, false)
+  _eventStackKey && _patchDOMnode && node && node.addEventListener(_eventStackKey, _patchDOMnode, false)
 }
 
 const locoDOM = {

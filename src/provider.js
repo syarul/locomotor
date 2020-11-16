@@ -1,8 +1,9 @@
 // import { hookus } from 'hookuspocus/src/core'
 // import { useReducer } from 'hookuspocus/src/use_reducer'
 import { hookus, useReducer } from 'hookuspocus/dist/hookuspocus'
+import { createEl } from './renderer'
 
-export const providerMap = new (WeakMap || Map)()
+const providerMap = new (WeakMap || Map)()
 providerMap.h = []
 providerMap.c = []
 providerMap.d = new (WeakMap || Map)()
@@ -52,4 +53,5 @@ export const setNode = (node, context) => {
     const [stack] = node.elementName.match(/([^Locomotor.Provider.])(.*)/g)
     updateProvider(stack, node.attributes)
   }
+  // node.render = createEl(node).firstChild
 }
