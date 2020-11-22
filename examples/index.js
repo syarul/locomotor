@@ -1,4 +1,4 @@
-import { locoDOM } from 'locomotor'
+import Locomotor, { locoDOM } from 'locomotor'
 // import TodoApp from './todo/TodoApp'
 import TodoApp from './list'
 

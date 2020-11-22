@@ -2,7 +2,7 @@ import { useState, useEffect } from 'locomotor'
 
 let i = 0
 
-function App (props) {
+function Duo (props) {
   const { todo } = props
   const [foo, setFoo] = useState(0)
   const [bar, setBar] = useState('bb')
@@ -44,4 +44,4 @@ function App (props) {
   )
 }
 
-export default App
+export default Duo

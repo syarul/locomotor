@@ -26,7 +26,7 @@ function App (props) {
       <input onclick={clickRadio} type='checkbox' checked={state} />
       {JSON.stringify(state)}
 
-      <input onchange={change} type='text' value={input} />
+      <input onChange={change} type='text' value={input} />
       {JSON.stringify(input)}
     </div>
   )

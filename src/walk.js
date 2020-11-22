@@ -1,18 +1,12 @@
-/* global Event */
-import patch from './patcher'
 import { setNode } from './provider'
-// import { pocus, dataMap } from 'hookuspocus/src/core'
-import { pocus, dataMap } from 'hookuspocus/dist/hookuspocus'
+import { pocus, dataMap } from 'hookuspocus/src/core'
+// import { pocus, dataMap } from 'hookuspocus/dist/hookuspocus'
 import './queue'
-import { uuid } from './utils'
-
+import { h, patch, diff, create } from 'virtual-dom'
 import isEqual from 'deep-equal'
 
 export const vtreeDataMap = new (WeakMap || Map)()
 vtreeDataMap.__contexts = new (WeakMap || Map)()
-
-/** @type {Promise} */
-let currentNode
 
 /** @type {number} */
 let interval
@@ -28,9 +22,12 @@ export const act = (run, clear) => {
   if (clear) subscribers = []
 }
 
-/** @type {import('./').Func} */
-const consume = c => c()
-
+/**
+ * Retrieved stored context data, also update 
+ * Document NodeElement ref if supplied
+ * @param {*} context 
+ * @param {*} node 
+ */
 export const getCurrentStack = (context, node) => {
   // get the original unbound context
   const unboundContext = vtreeDataMap.__contexts.get(context)
@@ -60,7 +57,13 @@ export const getCurrentStack = (context, node) => {
   }
 }
 
-const diffVNode = (oldNode, newNode) => {
+/**
+ * Due to certain context may get removed we also
+ * need to do cleanup upon each cycles
+ * @param {*} oldNode 
+ * @param {*} newNode 
+ */
+const cleanUpContext = (oldNode, newNode) => {
   if (typeof oldNode !== 'object') return
 
   if (oldNode.context && !newNode) {
@@ -72,32 +75,63 @@ const diffVNode = (oldNode, newNode) => {
       unboundContext
     } = getCurrentStack(oldNode.context) || {}
 
-    if(!ctx) return
+    if (!ctx) return
 
     delete ctx._hookStacks[stack]
 
     vtreeDataMap.set(unboundContext, ctx)
 
     vtreeDataMap.__contexts.delete(oldNode.context)
-
   }
 
   if (oldNode.constructor === Array) {
     oldNode.map((c, i) =>
-      diffVNode(c, newNode && newNode[i])
+      cleanUpContext(c, newNode && newNode[i])
     )
   }
 
   const { children } = oldNode
 
   if (children && children.length) {
-    children.map((c, i) =>
-      diffVNode(c, newNode && newNode.children[i])
-    )
+    children.map((c, i) => {
+      const nChild = newNode && newNode.children && newNode.children[i]
+      nChild && cleanUpContext(c, nChild)
+    })
   }
 }
 
-// capture onStateChanged handler from hookuspocus/on
+const resetStack = node => {
+  if (typeof node !== 'object') return
+
+  if (node.context) {
+    const {
+      ctx,
+      unboundContext
+    } = getCurrentStack(node.context) || {}
+
+    if (!ctx) return
+
+    ctx._stackCurrentIndex !== undefined && (ctx._stackCurrentIndex = 0)
+
+    vtreeDataMap.set(unboundContext, ctx)
+
+  }
+
+  if (node.constructor === Array) {
+    node.map(resetStack)
+  }
+
+  const { children } = node
+
+  if (children && children.length) {
+    children.map(resetStack)
+  }
+}
+
+/**
+ * capture onStateChanged handler from hookuspocus/on
+ * @param {*} context 
+ */
 export const hydrate = context => {
   const {
     stack,
@@ -105,34 +139,72 @@ export const hydrate = context => {
     unboundContext
   } = getCurrentStack(context) || {}
 
-  const { _node, _props, _event, _domNode } = currentStack
+  const { _node, _props, _domNode } = currentStack
 
-  currentNode = pocus([_props], context)
+  _node.then(oldNode => {
+    
+    resetStack(oldNode)
 
-  updateComponent(unboundContext, stack, {
-    _node: currentNode
+    pocus([_props], context).then(newNode => {
+
+      cleanUpContext(oldNode, newNode)
+
+      newNode.render = h(newNode)
+      // update
+      updateComponent(unboundContext, stack, {
+        _node: Promise.resolve(newNode)
+      })
+
+      const patches = diff(oldNode.render, newNode.render)
+
+      patch(_domNode, patches)
+
+      if (subscribers.length) {
+        clearTimeout(interval)
+        interval = setTimeout(() =>
+          subscribers.map(requestAnimationFrame)
+        )
+      }
+    })
+
   })
 
-  _domNode && _domNode.dispatchEvent(_event)
+  /* Promise.all([
+    _node, 
+    pocus([_props], context)
+  ]).then(([oldNode, newNode]) => {
 
-  // Promise.all([_node, currentNode]).then(([oldNode, newNode]) =>
-  //   diffVNode(oldNode, newNode)
-  // )
+    cleanUpContext(oldNode, newNode)
+
+    newNode.render = h(newNode)
+    // update
+    updateComponent(unboundContext, stack, {
+      _node: Promise.resolve(newNode)
+    })
+
+    const patches = diff(oldNode.render, newNode.render)
+ 
+    patch(_domNode, patches)
+
+    if (subscribers.length) {
+      clearTimeout(interval)
+      interval = setTimeout(() =>
+        subscribers.map(requestAnimationFrame)
+      )
+    }
+  }) */
 }
 
 /**
  * hooks generation through isolating each
  * context reference, ideally we still need
- * to retrieve it again on each cycle generation,
- * due to certain context may get removed we also
- * need to do cleanup upon each cycles
+ * to retrieve it again on each cycle generation
  * @param {Function} component
  * @param {object} props
  */
 const createComponent = (component, props) => {
   const componentData = vtreeDataMap.get(component) || {
     _hookStacks: {}
-    // _hookGenerations: [],
     // _stackCurrentIndex: 0
   }
 
@@ -144,27 +216,12 @@ const createComponent = (component, props) => {
     // if current context attributes has key prop
     // we used that instead
     (key !== undefined && key) ||
-    // assign default index `0` on 1st generation
+    // assign default index `0` on first time generation
     0
-
-  const eventStackKey = uuid()
 
   const currentStack = componentData._hookStacks[stackIndex] || {
     _index: stackIndex,
-    _component: component.bind({}),
-    _eventStackKey: eventStackKey,
-    _event: new Event(eventStackKey),
-    // internal element patching listener
-    _patchDOMnode: function () {
-      currentNode.then(node => {
-        patch(this, node)
-
-        clearTimeout(interval)
-        interval = setTimeout(() => {
-          subscribers.map(consume)
-        }, 100)
-      })
-    }
+    _component: component.bind({})
   }
 
   // first time generation
@@ -201,6 +258,10 @@ const updateComponent = (unboundComponent, stackIndex, newProps) => {
   vtreeDataMap.set(unboundComponent, vcomponent)
 }
 
+/**
+ * construct vtree from hook function
+ * @param {*} param
+ */
 const createElement = ({ elementName, attributes }) => {
   const {
     _index,
@@ -219,7 +280,7 @@ const createElement = ({ elementName, attributes }) => {
   }
   const setNodeWithContext = node => setNode(node, _component)
   node instanceof Promise ? node.then(setNodeWithContext) : setNodeWithContext(node)
-  // store the attributes and the output element
+  // store the attributes
   updateComponent(elementName, _index, {
     _node: node,
     _props: attributes
@@ -259,17 +320,7 @@ export const walk = node => {
       return walk(n)
     })
   } else if (node.constructor === Array) {
-    let i = 0
-    const len = node.length
-    const nodeArrays = []
-    while (i < len) {
-      nodeArrays.push(
-        walk(node[i])
-      )
-      i++
-    }
-    return Promise.all(nodeArrays)
-    // return Promise.all(node.map(walk))
+    return Promise.all(node.map(walk))
   } else {
     if (typeof node.elementName === 'function') {
       return Promise.resolve(createElement(node))
@@ -278,8 +329,8 @@ export const walk = node => {
       node.elementName,
       node.attributes,
       walk(node.children),
-      node.context ? node.context : null,
-      node.render ? node.render : null
+      node.context,
+      node.render
     ]).then(([elementName, attributes, children, context, render]) => {
       return {
         elementName,
@@ -288,6 +339,16 @@ export const walk = node => {
         context,
         render
       }
+    })
+  }
+}
+
+// render VDOM to actual DOM
+export const locoDOM = {
+  render: function (vnode, mountNode) {
+    vnode.then(node => {
+      // console.log(node)
+      mountNode.appendChild(create(h(node), null, getCurrentStack))
     })
   }
 }

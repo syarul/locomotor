@@ -1,6 +1,22 @@
-import { getCurrentStack } from './walk'
+import { getCurrentStack, lifecycleUpdate } from './walk'
 
-import patch from './patcher'
+// import patch from './patcher'
+
+import { create, h, patch, diff } from 'virtual-dom'
+
+// function render(count) {
+//   return h('div', {
+//     style: {
+//       textAlign: 'center',
+//       lineHeight: (100 + count) + 'px',
+//       border: '1px solid red',
+//       width: (100 + count) + 'px',
+//       height: (100 + count) + 'px'
+//     }
+//   }, [String(count)]);
+// }
+
+// console.log(typeof cv)
 
 function camelCase (s, o) {
   return `${s.replace(/([A-Z]+)/g, '-$1').toLowerCase()}:${o[s]};`
@@ -31,10 +47,10 @@ function evt (el, attr, value) {
 
   // react like onChange handler
   if (el.nodeName === 'INPUT' && attr === 'change') {
-    cur['keyup'] !== value && el.addEventListener('keyup', value, false)
-    cur['blur'] !== value && el.addEventListener('blur', value, false)
+    cur.keyup !== value && el.addEventListener('keyup', value, false)
+    cur.blur !== value && el.addEventListener('blur', value, false)
 
-    if (cur['keyup'] !== value || cur['blur'] !== value) {
+    if (cur.keyup !== value || cur.blur !== value) {
       nodeMap.set(el, {
         ...cur,
         keyup: value,
@@ -49,7 +65,7 @@ function evt (el, attr, value) {
   cur[attr] !== value && el.addEventListener(attr, value, false)
 
   // on subsequent run we patch the node through WeakMap
-  if (cur[attr] !== value ) {
+  if (cur[attr] !== value) {
     nodeMap.set(el, {
       ...cur,
       [attr]: value
@@ -117,14 +133,45 @@ const setStackListener = (vtree, node) => {
   _eventStackKey && _patchDOMnode && node && node.addEventListener(_eventStackKey, _patchDOMnode, false)
 }
 
+const updateNodes = vtree => {
+  if (vtree === null) return
+  const { elementName, attributes, children } = vtree
+  const node = null
+  if (typeof vtree === 'object') {
+    if (Array.isArray(vtree)) {
+      vtree.map(updateNodes)
+    } else {
+      // handle fragment
+      if (elementName === 'Locomotor.Fragment') {
+        children.map(updateNodes)
+        // handle provider
+      } else if (elementName.match(/Locomotor.Provider./)) {
+        children.map(updateNodes)
+      } else {
+        // const nvtree = h(vtree)
+        // const rootNode = create(nvtree)
+      }
+    }
+    if (vtree.context) {
+      getCurrentStack(vtree.context, node)
+    }
+  }
+  if (children && children.length) {
+    children.map(updateNodes)
+  }
+}
+
 const locoDOM = {
-  r: null,
-  render: function (vtree, rootNode) {
-    this.r = rootNode
-    vtree instanceof Promise ? vtree.then(v => {
-      setStackListener(v, this.r)
-      patch(this.r, v)
-    }) : patch(this.r, vtree)
+  render: function (vnode, mountNode) {
+    vnode.then(node => {
+      const vtree = h(node)
+      const rootNode = create(vtree)
+      getCurrentStack(node.context, rootNode)
+      // updateNodes(vtree)
+      // lifecycleUpdate(VTree, rootNode) // broadcast vtree and rootNode
+      // setStackListener(v, rootNode) // set root event handler
+      mountNode.appendChild(rootNode)
+    })
   }
 }
 

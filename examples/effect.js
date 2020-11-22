@@ -13,7 +13,7 @@ function App (props) {
 
   const [time, setTime] = useState(new Date().toLocaleTimeString())
 
-  console.log('hooks called')
+  // console.log('hooks called')
 
   useEffect(() => {
     console.log(`timer ${todo} ${timer ? 'on' : 'off'}!`)
@@ -36,7 +36,7 @@ function App (props) {
 
   return (
     <div>
-      <button onClick={toggle}> toggle {timer ? 'on' : 'off'} </button>
+      <button onclick={toggle}> toggle {timer ? 'on' : 'off'} </button>
       <p>current time {time}</p>
       <Sub {...props} />
     </div>

@@ -1,5 +1,6 @@
-// import { onStateChanged } from 'hookuspocus/src/on'
-import { onStateChanged } from 'hookuspocus/dist/hookuspocus'
+/* global requestAnimationFrame */
+import { onStateChanged } from 'hookuspocus/src/on'
+// import { onStateChanged } from 'hookuspocus/dist/hookuspocus'
 import { hydrate } from './walk'
 import { uniqueReverse } from './utils'
 
@@ -21,6 +22,7 @@ export const comitQueue = () =>
   enqueueRender.length && renderQueue()
 
 /**
+ * Taken some idea from https://gist.github.com/Raynos/8414846
  * When states changed, we push the context to render queue,
  * and commit the render by throttling, so render will not
  * get abused overtimes. Multiple way to do this, with the

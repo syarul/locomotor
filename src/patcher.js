@@ -67,7 +67,7 @@ function setAttributes (oldAttributes, newAttributes) {
  * @param {Node} node - the node to mount.
  * @return {node}
  */
-function mount(node) {
+function mount (node) {
   return dispatch(node, 'mount')
 }
 
@@ -77,7 +77,7 @@ function mount(node) {
  * @param {Node} node - the node to dismount.
  * @return {node}
  */
-function dismount(node) {
+function dismount (node) {
   return dispatch(node, 'dismount')
 }
 
@@ -88,7 +88,7 @@ function dismount(node) {
  * @param {Node} node - the initial node.
  * @return {Node}
  */
-function dispatch(node, type) {
+function dispatch (node, type) {
   // Trigger event for this element if it has a key.
   if (getKey(node)) {
     var ev = document.createEvent('Event')
@@ -118,24 +118,22 @@ function patch (DOMnode, VDOMnode) {
       }
 
       if (DOMnode.nodeType === DOCUMENT_ELEMENT_TYPE) {
-        if(VDOMnode.render) {
+        if (VDOMnode.render) {
           // console.log(DOMnode.isEqualNode(VDOMnode.render))
           // if (DOMnode.isEqualNode(VDOMnode.render)) return
         }
         if (DOMnode.nodeName === elementName.toUpperCase()) {
-
           Object.keys(attributes || {}).map(attr => {
             // if (typeof attributes[attr] === 'function') {
-              // const ev = attr.replace(/^on/, '').toLowerCase()
+            // const ev = attr.replace(/^on/, '').toLowerCase()
 
-
-              // onChange workaround for input keys event capturing
-              // if (DOMnode.nodeName === 'INPUT' && ev === 'change') {
-              //   DOMnode.removeEventListener('keyup', (nodeMap.get(DOMnode) || {}).keyup, false)
-              //   DOMnode.removeEventListener('blur', (nodeMap.get(DOMnode) || {}).blur, false)
-              // } else {
-              //   DOMnode.removeEventListener(ev, (nodeMap.get(DOMnode) || {})[ev], false)
-              // }
+            // onChange workaround for input keys event capturing
+            // if (DOMnode.nodeName === 'INPUT' && ev === 'change') {
+            //   DOMnode.removeEventListener('keyup', (nodeMap.get(DOMnode) || {}).keyup, false)
+            //   DOMnode.removeEventListener('blur', (nodeMap.get(DOMnode) || {}).blur, false)
+            // } else {
+            //   DOMnode.removeEventListener(ev, (nodeMap.get(DOMnode) || {})[ev], false)
+            // }
             // }
             parseAttr(DOMnode, attr, attributes[attr])
           })
@@ -161,9 +159,9 @@ function patch (DOMnode, VDOMnode) {
 }
 
 function getIndex (store, count, key) {
-  if(key !== undefined) {
+  if (key !== undefined) {
     const index = store.findIndex(n => n && n.attributes && n.attributes[key])
-    if(!~index) {
+    if (!~index) {
       return store.length - count - 1
     }
     return index
@@ -187,20 +185,38 @@ function getKey (node) {
   // return target
 }
 
-function getKeyFromVtree(store) {
-  return store && store.attributes && store.attributes['key']
+function getKeyFromVtree (store) {
+  return store && store.attributes && store.attributes.key
 }
 
 let checkOld
+let index
+let oldKey
+let keyedNodes
+let newKey
+let foundNode
 
-function diff (oldParentNode, newParentNode, isFragment) {
+function diff (oldParentNode, newParentNode, isFragment, checkKeys) {
   let DOMnode = isFragment ? oldParentNode : oldParentNode.firstChild
 
   let count = (newParentNode.children && newParentNode.children.length) || 0
 
   const newStore = newParentNode.children || []
 
-  let index
+  if (checkKeys) {
+    count = 0
+    while (DOMnode) {
+      count++
+      checkOld = DOMnode
+      oldKey = getKey(checkOld)
+      DOMnode = DOMnode.nextSibling
+
+      if (oldKey) {
+        if (!keyedNodes) keyedNodes = {}
+        keyedNodes[oldKey] = checkOld
+      }
+    }
+  }
 
   if (!DOMnode) {
     // if DOMnode is null process VDOMnode
@@ -211,47 +227,21 @@ function diff (oldParentNode, newParentNode, isFragment) {
       checkOld = DOMnode
       DOMnode = DOMnode.nextSibling
       index = getIndex(newStore, count)
-      getKey(checkOld) && console.log(checkOld, newStore)
-      if (checkOld && (newStore[index] !== undefined)) {
+      if (keyedNodes && (newKey = getKey(checkOld)) && (foundNode = keyedNodes[newKey])) {
+        delete keyedNodes[newKey]
+        // If we have a key and it existed before we move the previous node to the new position if needed and diff it.
+        if (foundNode !== DOMnode) {
+          oldParentNode.insertBefore(foundNode, DOMnode)
+        } else {
+          // DOMnode = DOMnode.nextSibling
+        }
+        patch(foundNode, newStore[index])
+      } else if (checkOld && (newStore[index] !== undefined)) {
         if (Array.isArray(newStore[index])) {
           // exit when it's a list
-          return diff(oldParentNode, { children: newStore[index] })
+          return diff(oldParentNode, { children: newStore[index] }, null, true)
         } else {
-          const oldKey = getKey(checkOld)
-          // console.log(oldParentNode)
-          if (!!oldKey) {
-            const currentKey = getKeyFromVtree(newStore[index])
-            // if checkOld key === vtree[index] attributes.key
-            // --> ignore
-            // if checkOld key !== vtree[index] attributes.key
-            // --> find in from parentNode if exist and move here
-            // then diff
-
-            console.log(oldKey, currentKey)
-            if (oldKey === currentKey) {
-            //   // skip
-            } else if (oldKey !== currentKey) {
-              const checkNew = checkOld.parentNode.querySelector(`[key="${currentKey}"]`)
-              console.log(checkNew)
-            //   // console.log(checkNew)
-            //   if(checkNew) {
-            //     // console.log('do', oldKey, currentKey)
-            //     checkOld.parentNode.insertBefore(checkNew, checkOld)
-            //     // mount(checkNew)
-            //   } else {
-            //     patch(checkOld, newStore[index])
-            //   }
-              // checkNew.parentNode.insertBefore(checkNew, checkOld)
-              // mount(checkNew)
-            } else {
-            //   // fallback
-              // patch(checkOld, newStore[index])
-            }
-            patch(checkOld, newStore[index])
-          } else {
-            !!oldKey && console.log(oldKey)
-            patch(checkOld, newStore[index])
-          }
+          patch(checkOld, newStore[index])
         }
       } else if (checkOld && (newStore[index] === undefined)) {
         if (nodeMap.has(checkOld)) {
@@ -259,6 +249,7 @@ function diff (oldParentNode, newParentNode, isFragment) {
         }
         oldParentNode.removeChild(checkOld)
       }
+
       if (DOMnode === null) {
         if (isFragment && oldParentNode.parentNode) {
           addExtra(count, oldParentNode.parentNode, newStore)
@@ -272,6 +263,11 @@ function diff (oldParentNode, newParentNode, isFragment) {
         }
       }
     }
+  }
+
+  // Remove old keyed nodes.
+  for (oldKey in keyedNodes) {
+    oldParentNode.appendChild(keyedNodes[oldKey])
   }
 }
 

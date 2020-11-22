@@ -35,7 +35,9 @@
   },
   "homepage": "https://github.com/syarul/locomotor#readme",
   "dependencies": {
-    "hookuspocus": "https://github.com/syarul/hookuspocus#master"
+    "hookuspocus": "https://github.com/syarul/hookuspocus#master",
+    "set-dom": "^7.5.2",
+    "virtual-dom": "https://github.com/syarul/virtual-dom"
   },
   "devDependencies": {
     "@babel/core": "^7.8.4",

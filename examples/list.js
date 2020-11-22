@@ -52,7 +52,7 @@ function App (props) {
 
   const click = () => {
     setLs([...ls, {
-      key: (ls.length ? parseInt(ls[ls.length - 1].key) + 1 : 0).toString(),//Math.round(Math.random() * 1e17).toString(32),
+      key: (ls.length ? parseInt(ls[ls.length - 1].key) + 1 : 0).toString(), // Math.round(Math.random() * 1e17).toString(32),
       foobar: 'foo' + ls.length
     }])
   }
